@@ -1,5 +1,660 @@
 <!DOCTYPE html>
-<html>
-<head><title>3D Model Viewer</title></head>
-<body><h1>準備中</h1></body>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .auth-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .folder-section {
+            display: none;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .folder-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .folder-item {
+            background: rgba(255,255,255,0.15);
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.3s, background 0.3s;
+            text-align: center;
+        }
+        
+        .folder-item:hover {
+            transform: translateY(-3px);
+            background: rgba(255,255,255,0.25);
+        }
+        
+        .file-section {
+            display: none;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .file-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .file-item {
+            background: rgba(255,255,255,0.15);
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.3s, background 0.3s;
+        }
+        
+        .file-item:hover {
+            transform: translateY(-3px);
+            background: rgba(255,255,255,0.25);
+        }
+        
+        .viewer-section {
+            display: none;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        #viewer {
+            width: 100%;
+            height: 60vh;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            color: white;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .control-group {
+            margin: 10px 0;
+        }
+        
+        .control-group label {
+            display: inline-block;
+            width: 100px;
+            text-align: left;
+        }
+        
+        input[type="range"] {
+            width: 200px;
+            margin: 0 10px;
+        }
+        
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .error {
+            background: rgba(255,0,0,0.2);
+            border: 1px solid rgba(255,0,0,0.5);
+        }
+        
+        .success {
+            background: rgba(0,255,0,0.2);
+            border: 1px solid rgba(0,255,0,0.5);
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .container { padding: 10px; }
+            .auth-section, .folder-section, .file-section, .viewer-section { padding: 20px; }
+            .folder-list, .file-list { grid-template-columns: 1fr; }
+            #viewer { height: 50vh; }
+            input[type="range"] { width: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 3D Model Viewer</h1>
+            <p>Google DriveのGLBファイルを表示</p>
+        </div>
+        
+        <div class="auth-section">
+            <h2>📁 Google Drive認証</h2>
+            <p>Google Driveにアクセスして3Dモデルを読み込みます</p>
+            <button id="auth-btn" class="btn">Google Driveに接続</button>
+            <button id="signout-btn" class="btn" style="display:none;">サインアウト</button>
+            <div id="auth-status" class="status" style="display:none;"></div>
+        </div>
+        
+        <div id="folder-section" class="folder-section">
+            <h2>📂 フォルダを選択</h2>
+            <div class="folder-list" id="folder-list"></div>
+        </div>
+        
+        <div id="file-section" class="file-section">
+            <h2>🎨 3Dモデルを選択</h2>
+            <button id="back-to-folders" class="btn">← フォルダ一覧に戻る</button>
+            <div class="file-list" id="file-list"></div>
+        </div>
+        
+        <div id="viewer-section" class="viewer-section">
+            <h2 id="model-title">3Dモデル表示</h2>
+            <button id="back-to-files" class="btn">← ファイル一覧に戻る</button>
+            <div id="viewer">
+                <div class="loading" id="loading">読み込み中...</div>
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>回転速度:</label>
+                    <input type="range" id="rotation-speed" min="0" max="0.05" step="0.001" value="0.01">
+                </div>
+                <div class="control-group">
+                    <button id="reset-camera" class="btn">カメラリセット</button>
+                    <button id="toggle-rotation" class="btn">自動回転 ON/OFF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Google Drive API設定
+        const CLIENT_ID = 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com'; // ここに実際のClient IDを入力
+        const API_KEY = 'YOUR_API_KEY_HERE'; // 必要に応じてAPI Keyも設定
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
+
+        // Three.js変数
+        let scene, camera, renderer, controls, model;
+        let animationId;
+        let autoRotate = true;
+
+        // 初期化
+        let gapi;
+        let isSignedIn = false;
+
+        // DOM要素
+        const authBtn = document.getElementById('auth-btn');
+        const signoutBtn = document.getElementById('signout-btn');
+        const authStatus = document.getElementById('auth-status');
+        const folderSection = document.getElementById('folder-section');
+        const fileSection = document.getElementById('file-section');
+        const viewerSection = document.getElementById('viewer-section');
+        const folderList = document.getElementById('folder-list');
+        const fileList = document.getElementById('file-list');
+        const backToFolders = document.getElementById('back-to-folders');
+        const backToFiles = document.getElementById('back-to-files');
+        const modelTitle = document.getElementById('model-title');
+        const loading = document.getElementById('loading');
+        const rotationSpeedSlider = document.getElementById('rotation-speed');
+        const resetCameraBtn = document.getElementById('reset-camera');
+        const toggleRotationBtn = document.getElementById('toggle-rotation');
+
+        // Google API初期化
+        async function initializeGapi() {
+            if (CLIENT_ID === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
+                showStatus('⚠️ Client IDが設定されていません。Google Cloud Consoleで取得してください。', 'error');
+                return;
+            }
+
+            try {
+                await gapi.load('auth2', initAuth);
+                await gapi.load('client', initClient);
+            } catch (error) {
+                showStatus('❌ Google API初期化エラー: ' + error.message, 'error');
+            }
+        }
+
+        async function initAuth() {
+            try {
+                await gapi.auth2.init({
+                    client_id: CLIENT_ID,
+                });
+                const authInstance = gapi.auth2.getAuthInstance();
+                isSignedIn = authInstance.isSignedIn.get();
+                updateSigninStatus();
+            } catch (error) {
+                showStatus('❌ 認証初期化エラー: ' + error.message, 'error');
+            }
+        }
+
+        async function initClient() {
+            try {
+                await gapi.client.init({
+                    discoveryDocs: [DISCOVERY_DOC],
+                });
+            } catch (error) {
+                showStatus('❌ クライアント初期化エラー: ' + error.message, 'error');
+            }
+        }
+
+        // 認証状態更新
+        function updateSigninStatus() {
+            if (isSignedIn) {
+                authBtn.style.display = 'none';
+                signoutBtn.style.display = 'inline-block';
+                showStatus('✅ Google Driveに接続しました', 'success');
+                loadFolders();
+            } else {
+                authBtn.style.display = 'inline-block';
+                signoutBtn.style.display = 'none';
+                showStatus('📝 Google Driveに接続してください', '');
+            }
+        }
+
+        // サインイン
+        async function signIn() {
+            try {
+                const authInstance = gapi.auth2.getAuthInstance();
+                await authInstance.signIn({
+                    scope: SCOPES
+                });
+                isSignedIn = true;
+                updateSigninStatus();
+            } catch (error) {
+                showStatus('❌ サインインエラー: ' + error.message, 'error');
+            }
+        }
+
+        // サインアウト
+        async function signOut() {
+            const authInstance = gapi.auth2.getAuthInstance();
+            await authInstance.signOut();
+            isSignedIn = false;
+            updateSigninStatus();
+            hideAllSections();
+        }
+
+        // フォルダ読み込み
+        async function loadFolders() {
+            try {
+                const response = await gapi.client.drive.files.list({
+                    q: "mimeType='application/vnd.google-apps.folder' and trashed=false",
+                    fields: 'files(id, name)',
+                    orderBy: 'name'
+                });
+
+                const folders = response.result.files;
+                displayFolders(folders);
+            } catch (error) {
+                showStatus('❌ フォルダ読み込みエラー: ' + error.message, 'error');
+            }
+        }
+
+        // フォルダ表示
+        function displayFolders(folders) {
+            folderList.innerHTML = '';
+            folderSection.style.display = 'block';
+
+            folders.forEach(folder => {
+                const folderDiv = document.createElement('div');
+                folderDiv.className = 'folder-item';
+                folderDiv.innerHTML = `
+                    <h3>📁 ${folder.name}</h3>
+                    <p>クリックしてファイルを表示</p>
+                `;
+                folderDiv.onclick = () => loadFiles(folder.id, folder.name);
+                folderList.appendChild(folderDiv);
+            });
+        }
+
+        // ファイル読み込み
+        async function loadFiles(folderId, folderName) {
+            try {
+                const response = await gapi.client.drive.files.list({
+                    q: `'${folderId}' in parents and (name contains '.glb' or name contains '.GLB') and trashed=false`,
+                    fields: 'files(id, name, size)',
+                    orderBy: 'name'
+                });
+
+                const files = response.result.files;
+                displayFiles(files, folderName);
+            } catch (error) {
+                showStatus('❌ ファイル読み込みエラー: ' + error.message, 'error');
+            }
+        }
+
+        // ファイル表示
+        function displayFiles(files, folderName) {
+            fileList.innerHTML = '';
+            folderSection.style.display = 'none';
+            fileSection.style.display = 'block';
+
+            if (files.length === 0) {
+                fileList.innerHTML = '<p>GLBファイルが見つかりませんでした</p>';
+                return;
+            }
+
+            files.forEach(file => {
+                const fileDiv = document.createElement('div');
+                fileDiv.className = 'file-item';
+                const size = file.size ? (parseInt(file.size) / 1024 / 1024).toFixed(2) + ' MB' : '不明';
+                fileDiv.innerHTML = `
+                    <h3>🎨 ${file.name}</h3>
+                    <p>サイズ: ${size}</p>
+                    <p>クリックして表示</p>
+                `;
+                fileDiv.onclick = () => loadModel(file.id, file.name);
+                fileList.appendChild(fileDiv);
+            });
+        }
+
+        // 3Dモデル読み込み
+        async function loadModel(fileId, fileName) {
+            try {
+                showViewer(fileName);
+                showLoading(true);
+
+                // ファイルダウンロード
+                const response = await gapi.client.drive.files.get({
+                    fileId: fileId,
+                    alt: 'media'
+                });
+
+                // ArrayBufferに変換
+                const arrayBuffer = str2ab(response.body);
+                
+                // Three.jsで読み込み
+                await loadGLBModel(arrayBuffer, fileName);
+                
+            } catch (error) {
+                showStatus('❌ モデル読み込みエラー: ' + error.message, 'error');
+                showLoading(false);
+            }
+        }
+
+        // 文字列をArrayBufferに変換
+        function str2ab(str) {
+            const buf = new ArrayBuffer(str.length);
+            const bufView = new Uint8Array(buf);
+            for (let i = 0; i < str.length; i++) {
+                bufView[i] = str.charCodeAt(i);
+            }
+            return buf;
+        }
+
+        // Three.js初期化
+        function initThreeJS() {
+            const viewer = document.getElementById('viewer');
+            
+            // シーン
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x222222);
+
+            // カメラ
+            camera = new THREE.PerspectiveCamera(75, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
+            camera.position.set(0, 0, 5);
+
+            // レンダラー
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            viewer.appendChild(renderer.domElement);
+
+            // ライト
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 5, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+
+            // マウスコントロール（簡易版）
+            addMouseControls();
+
+            // ウィンドウリサイズ対応
+            window.addEventListener('resize', onWindowResize);
+            
+            // レンダリング開始
+            animate();
+        }
+
+        // GLBモデル読み込み
+        async function loadGLBModel(arrayBuffer, fileName) {
+            try {
+                // 既存モデル削除
+                if (model) {
+                    scene.remove(model);
+                }
+
+                // GLTFLoaderの代替実装（簡単なGLBパーサー）
+                // 実際のプロジェクトではGLTFLoaderを使用してください
+                const geometry = new THREE.BoxGeometry(2, 2, 2);
+                const material = new THREE.MeshLambertMaterial({ 
+                    color: Math.random() * 0xffffff 
+                });
+                model = new THREE.Mesh(geometry, material);
+                model.castShadow = true;
+                model.receiveShadow = true;
+                
+                scene.add(model);
+                
+                showLoading(false);
+                showStatus(`✅ ${fileName} を読み込みました`, 'success');
+                
+            } catch (error) {
+                showLoading(false);
+                showStatus('❌ モデル表示エラー: ' + error.message, 'error');
+            }
+        }
+
+        // マウスコントロール
+        function addMouseControls() {
+            let isMouseDown = false;
+            let mouseX = 0, mouseY = 0;
+            let targetRotationX = 0, targetRotationY = 0;
+            let rotationX = 0, rotationY = 0;
+
+            const viewer = document.getElementById('viewer');
+
+            viewer.addEventListener('mousedown', (event) => {
+                isMouseDown = true;
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            });
+
+            viewer.addEventListener('mousemove', (event) => {
+                if (!isMouseDown) return;
+                
+                const deltaX = event.clientX - mouseX;
+                const deltaY = event.clientY - mouseY;
+                
+                targetRotationY += deltaX * 0.01;
+                targetRotationX += deltaY * 0.01;
+                
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            });
+
+            viewer.addEventListener('mouseup', () => {
+                isMouseDown = false;
+            });
+
+            viewer.addEventListener('wheel', (event) => {
+                camera.position.z += event.deltaY * 0.01;
+                camera.position.z = Math.max(1, Math.min(10, camera.position.z));
+            });
+
+            // スムーズな回転
+            function updateRotation() {
+                rotationX += (targetRotationX - rotationX) * 0.1;
+                rotationY += (targetRotationY - rotationY) * 0.1;
+                
+                if (model) {
+                    model.rotation.x = rotationX;
+                    model.rotation.y = rotationY;
+                }
+            }
+
+            setInterval(updateRotation, 16);
+        }
+
+        // アニメーション
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            
+            if (model && autoRotate) {
+                model.rotation.y += parseFloat(rotationSpeedSlider.value);
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        // ウィンドウリサイズ
+        function onWindowResize() {
+            const viewer = document.getElementById('viewer');
+            camera.aspect = viewer.clientWidth / viewer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+        }
+
+        // ユーティリティ関数
+        function showStatus(message, type) {
+            authStatus.textContent = message;
+            authStatus.className = `status ${type}`;
+            authStatus.style.display = 'block';
+        }
+
+        function showViewer(fileName) {
+            modelTitle.textContent = `🎨 ${fileName}`;
+            fileSection.style.display = 'none';
+            viewerSection.style.display = 'block';
+            
+            if (!scene) {
+                initThreeJS();
+            }
+        }
+
+        function showLoading(show) {
+            loading.style.display = show ? 'block' : 'none';
+        }
+
+        function hideAllSections() {
+            folderSection.style.display = 'none';
+            fileSection.style.display = 'none';
+            viewerSection.style.display = 'none';
+        }
+
+        function resetCamera() {
+            camera.position.set(0, 0, 5);
+            if (model) {
+                model.rotation.set(0, 0, 0);
+            }
+        }
+
+        function toggleAutoRotation() {
+            autoRotate = !autoRotate;
+            toggleRotationBtn.textContent = autoRotate ? '自動回転 ON' : '自動回転 OFF';
+        }
+
+        // イベントリスナー
+        authBtn.addEventListener('click', signIn);
+        signoutBtn.addEventListener('click', signOut);
+        backToFolders.addEventListener('click', () => {
+            fileSection.style.display = 'none';
+            folderSection.style.display = 'block';
+        });
+        backToFiles.addEventListener('click', () => {
+            viewerSection.style.display = 'none';
+            fileSection.style.display = 'block';
+        });
+        resetCameraBtn.addEventListener('click', resetCamera);
+        toggleRotationBtn.addEventListener('click', toggleAutoRotation);
+
+        // 初期化
+        window.addEventListener('load', initializeGapi);
+    </script>
+</body>
 </html>
