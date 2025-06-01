@@ -316,7 +316,8 @@
             
             <div id="status-area">
                 <div id="load-status" class="status">
-                    🔄 Google Driveフォルダからファイルを読み込み中...
+                    🔄 Google Driveフォルダからファイルを読み込み中...<br>
+                    <small>読み込み中でも他の機能をご利用いただけます</small>
                 </div>
             </div>
             
@@ -532,7 +533,11 @@
         window.addEventListener('load', () => {
             console.log('3D Model Viewer 初期化');
             setupEventListeners();
-            loadGoogleDriveFiles(); // Google Drive APIを使用してファイル読み込み
+            
+            // Google Drive読み込みを非同期で実行（UIをブロックしない）
+            setTimeout(() => {
+                loadGoogleDriveFiles();
+            }, 100); // 100ms後に実行してUIの初期化を優先
         });
         
         // イベントリスナー設定
@@ -555,7 +560,12 @@
             
             // フォルダID変更
             changeFolderBtn.addEventListener('click', changeFolderId);
-            reloadFilesBtn.addEventListener('click', loadGoogleDriveFiles);
+            reloadFilesBtn.addEventListener('click', () => {
+                showStatus('🔄 再読み込み中...<br><small>他の機能も引き続きご利用いただけます</small>', '');
+                setTimeout(() => {
+                    loadGoogleDriveFiles();
+                }, 100);
+            });
             
             // ビューアー操作
             backToFiles.addEventListener('click', () => {
@@ -580,10 +590,10 @@
             scaleSlider.addEventListener('input', updateSelectedModelPosition);
         }
         
-        // Google Drive APIを使用してファイル読み込み
+        // Google Drive APIを使用してファイル読み込み（非ブロッキング版）
         async function loadGoogleDriveFiles() {
             try {
-                showStatus('🔄 Google Drive APIでフォルダ内のファイルを検索中...', '');
+                showStatus('🔄 Google Drive APIでフォルダ内のファイルを検索中...<br><small>読み込み中でも他の機能をご利用いただけます</small>', '');
                 
                 // フォルダ情報の確認
                 console.log('フォルダID:', FOLDER_ID);
@@ -593,6 +603,7 @@
                 
                 console.log('Google Drive API呼び出し:', apiUrl);
                 
+                // fetch を非同期で実行し、UIをブロックしない
                 const response = await fetch(apiUrl);
                 
                 if (!response.ok) {
@@ -639,14 +650,20 @@
                         • フォルダが「リンクを知っている全員が閲覧可」に設定されているか
                         • フォルダ内にGLB/GLTFファイルが存在するか
                         • ファイル拡張子が .glb または .gltf で終わっているか
+                        
+                        💡 他の方法も利用可能:
+                        • ローカルファイル読み込み
+                        • 共有リンクから個別追加
+                        • フォルダID変更
                     `;
                     
                     showStatus(debugInfo, '');
                     
                     // 見つかったファイルの一覧も表示
                     if (data.files && data.files.length > 0) {
-                        const fileList = data.files.map(f => `• ${f.name}`).join('\n');
-                        showStatus(`\n📄 フォルダ内のファイル:\n${fileList}`, '');
+                        const fileList = data.files.slice(0, 10).map(f => `• ${f.name}`).join('\n');
+                        const moreFiles = data.files.length > 10 ? `\n... 他${data.files.length - 10}個のファイル` : '';
+                        showStatus(`\n📄 フォルダ内のファイル (最大10個表示):\n${fileList}${moreFiles}`, '');
                     }
                 } else {
                     // ファイル情報を整形
@@ -682,6 +699,12 @@
                     1. フォルダを「リンクを知っている全員が閲覧可」に設定
                     2. フォルダURLで直接アクセスできるか確認
                     3. 手動でファイルを追加するか、ローカルファイルを使用
+                    4. フォルダIDを変更して別のフォルダを試す
+                    
+                    🎯 読み込み中でも他の機能は利用可能です:
+                    • ローカルファイル読み込み
+                    • 共有リンク追加
+                    • フォルダID変更
                 `;
                 
                 showStatus(debugInfo, '');
@@ -721,7 +744,7 @@
             localFileInput.value = '';
         }
         
-        // フォルダID変更機能
+        // フォルダID変更機能（改良版）
         function changeFolderId() {
             const newFolderId = prompt(`新しいGoogle DriveフォルダIDを入力してください:
 
@@ -744,14 +767,16 @@ https://drive.google.com/drive/folders/新しいフォルダID
             if (extractedId && extractedId !== FOLDER_ID) {
                 FOLDER_ID = extractedId;
                 currentFolderIdSpan.textContent = FOLDER_ID;
-                showStatus(`📁 フォルダIDを変更しました: ${FOLDER_ID}`, 'success');
+                showStatus(`📁 フォルダIDを変更しました: ${FOLDER_ID}<br><small>新しいフォルダから読み込み中...</small>`, 'success');
                 
                 // ファイルリストをクリア
                 currentFiles = [];
                 fileSelector.style.display = 'none';
                 
-                // 新しいフォルダから読み込み
-                loadGoogleDriveFiles();
+                // 新しいフォルダから非同期で読み込み
+                setTimeout(() => {
+                    loadGoogleDriveFiles();
+                }, 100);
             }
         }
         
