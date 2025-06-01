@@ -325,9 +325,9 @@
                     <button id="next-file" class="nav-btn">❯</button>
                 </div>
                 <div class="file-actions">
-                    <button id="load-single" class="btn">単体で表示</button>
-                    <button id="add-to-scene" class="btn">シーンに追加</button>
-                    <button id="clear-scene" class="btn">シーンクリア</button>
+                    <button id="load-single" class="btn">🌄 背景として読み込み</button>
+                    <button id="add-to-scene" class="btn">🏠 オブジェクト追加</button>
+                    <button id="clear-scene" class="btn">🗑️ シーンクリア</button>
                 </div>
             </div>
             
@@ -345,26 +345,41 @@
             </div>
             
             <div id="position-controls" class="position-controls" style="display:none;">
-                <h3>🎯 選択中モデルの位置調整</h3>
+                <h3>🎯 選択中モデルの位置調整: <span id="selected-model-name">なし</span></h3>
                 <div class="position-group">
                     <label>X位置:</label>
-                    <input type="range" id="pos-x" min="-10" max="10" step="0.1" value="0">
+                    <input type="range" id="pos-x" min="-20" max="20" step="0.1" value="0">
                     <span id="pos-x-value">0</span>
+                    <button class="small-btn" onclick="resetPosition('x')">リセット</button>
                 </div>
                 <div class="position-group">
                     <label>Y位置:</label>
-                    <input type="range" id="pos-y" min="-10" max="10" step="0.1" value="0">
+                    <input type="range" id="pos-y" min="-20" max="20" step="0.1" value="0">
                     <span id="pos-y-value">0</span>
+                    <button class="small-btn" onclick="resetPosition('y')">リセット</button>
                 </div>
                 <div class="position-group">
                     <label>Z位置:</label>
-                    <input type="range" id="pos-z" min="-10" max="10" step="0.1" value="0">
+                    <input type="range" id="pos-z" min="-20" max="20" step="0.1" value="0">
                     <span id="pos-z-value">0</span>
+                    <button class="small-btn" onclick="resetPosition('z')">リセット</button>
+                </div>
+                <div class="position-group">
+                    <label>回転Y:</label>
+                    <input type="range" id="rot-y" min="0" max="6.28" step="0.1" value="0">
+                    <span id="rot-y-value">0°</span>
+                    <button class="small-btn" onclick="resetRotation()">リセット</button>
                 </div>
                 <div class="position-group">
                     <label>スケール:</label>
-                    <input type="range" id="scale" min="0.1" max="3" step="0.1" value="1">
+                    <input type="range" id="scale" min="0.1" max="5" step="0.1" value="1">
                     <span id="scale-value">1</span>
+                    <button class="small-btn" onclick="resetScale()">リセット</button>
+                </div>
+                <div class="position-group">
+                    <button class="btn" onclick="duplicateModel()">🔄 複製</button>
+                    <button class="btn" onclick="centerModel()">📍 中央配置</button>
+                    <button class="btn" onclick="snapToGround()">⬇️ 地面に配置</button>
                 </div>
             </div>
             
@@ -437,11 +452,14 @@
         const posXSlider = document.getElementById('pos-x');
         const posYSlider = document.getElementById('pos-y');
         const posZSlider = document.getElementById('pos-z');
+        const rotYSlider = document.getElementById('rot-y');
         const scaleSlider = document.getElementById('scale');
         const posXValue = document.getElementById('pos-x-value');
         const posYValue = document.getElementById('pos-y-value');
         const posZValue = document.getElementById('pos-z-value');
+        const rotYValue = document.getElementById('rot-y-value');
         const scaleValue = document.getElementById('scale-value');
+        const selectedModelName = document.getElementById('selected-model-name');
 
         // 診断情報表示
         function updateDiagnostics() {
@@ -835,40 +853,55 @@
                     selectedModelIndex = -1;
                 }
 
-                const geometry = new THREE.BoxGeometry(1, 1, 1);
+                // モデルタイプを判定（背景 vs オブジェクト）
+                const isBackground = clearSceneFlag || sceneModels.length === 0;
+                
+                // ランダムな色とサイズでボックスを作成（実際のプロジェクトではGLTFLoaderを使用）
+                const size = isBackground ? 8 : 1; // 背景は大きく、オブジェクトは小さく
+                const geometry = new THREE.BoxGeometry(size, size, size);
                 const material = new THREE.MeshLambertMaterial({ 
-                    color: new THREE.Color().setHSL(Math.random(), 0.7, 0.5)
+                    color: new THREE.Color().setHSL(Math.random(), 0.7, 0.5),
+                    transparent: isBackground ? true : false,
+                    opacity: isBackground ? 0.3 : 1.0
                 });
                 const model = new THREE.Mesh(geometry, material);
                 model.castShadow = true;
                 model.receiveShadow = true;
                 
-                const spacing = 2.5;
-                const numModels = sceneModels.length;
-                model.position.set(
-                    (numModels % 3 - 1) * spacing,
-                    0,
-                    Math.floor(numModels / 3) * spacing
-                );
+                // 位置設定
+                if (isBackground) {
+                    // 背景は中央に配置
+                    model.position.set(0, 0, 0);
+                } else {
+                    // オブジェクトは背景の上にランダム配置
+                    const radius = 3;
+                    const angle = Math.random() * Math.PI * 2;
+                    model.position.set(
+                        Math.cos(angle) * radius * Math.random(),
+                        1, // 少し浮かせて配置
+                        Math.sin(angle) * radius * Math.random()
+                    );
+                }
                 
                 scene.add(model);
                 
                 const modelData = {
                     model: model,
                     name: fileName,
+                    type: isBackground ? 'background' : 'object',
                     originalPosition: model.position.clone(),
+                    originalRotation: model.rotation.clone(),
                     originalScale: model.scale.clone()
                 };
                 sceneModels.push(modelData);
                 
-                if (clearSceneFlag || sceneModels.length === 1) {
-                    selectedModelIndex = sceneModels.length - 1;
-                    updateSelectedModel();
-                }
+                // 新しく追加したモデルを選択
+                selectedModelIndex = sceneModels.length - 1;
+                updateSelectedModel();
                 
                 updateSceneModelsList();
                 showLoading(false);
-                showStatus(`✅ ${fileName} を読み込みました`, 'success');
+                showStatus(`✅ ${fileName} を${isBackground ? '背景として' : 'オブジェクトとして'}読み込みました`, 'success');
                 
             } catch (error) {
                 showLoading(false);
@@ -902,8 +935,11 @@
                 modelDiv.className = 'model-item';
                 modelDiv.style.background = selectedModelIndex === index ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)';
                 
+                const typeIcon = modelData.type === 'background' ? '🌄' : '🏠';
+                const typeText = modelData.type === 'background' ? '背景' : 'オブジェクト';
+                
                 modelDiv.innerHTML = `
-                    <span>🎨 ${modelData.name}</span>
+                    <span>${typeIcon} ${modelData.name} (${typeText})</span>
                     <div class="model-controls">
                         <button class="small-btn" onclick="selectModel(${index})">選択</button>
                         <button class="small-btn" onclick="removeModel(${index})">削除</button>
@@ -944,14 +980,18 @@
                 const modelData = sceneModels[selectedModelIndex];
                 const model = modelData.model;
                 
+                selectedModelName.textContent = modelData.name;
+                
                 posXSlider.value = model.position.x;
                 posYSlider.value = model.position.y;
                 posZSlider.value = model.position.z;
+                rotYSlider.value = model.rotation.y;
                 scaleSlider.value = model.scale.x;
                 
                 updatePositionValues();
                 positionControls.style.display = 'block';
             } else {
+                selectedModelName.textContent = 'なし';
                 positionControls.style.display = 'none';
             }
         }
@@ -961,6 +1001,7 @@
             posXValue.textContent = parseFloat(posXSlider.value).toFixed(1);
             posYValue.textContent = parseFloat(posYSlider.value).toFixed(1);
             posZValue.textContent = parseFloat(posZSlider.value).toFixed(1);
+            rotYValue.textContent = (parseFloat(rotYSlider.value) * 180 / Math.PI).toFixed(0) + '°';
             scaleValue.textContent = parseFloat(scaleSlider.value).toFixed(1);
         }
 
@@ -973,8 +1014,104 @@
                     parseFloat(posYSlider.value),
                     parseFloat(posZSlider.value)
                 );
+                model.rotation.y = parseFloat(rotYSlider.value);
                 const scale = parseFloat(scaleSlider.value);
                 model.scale.set(scale, scale, scale);
+                updatePositionValues();
+            }
+        }
+
+        // 位置リセット機能
+        function resetPosition(axis) {
+            if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
+                const model = sceneModels[selectedModelIndex].model;
+                switch(axis) {
+                    case 'x': 
+                        model.position.x = 0; 
+                        posXSlider.value = 0; 
+                        break;
+                    case 'y': 
+                        model.position.y = 0; 
+                        posYSlider.value = 0; 
+                        break;
+                    case 'z': 
+                        model.position.z = 0; 
+                        posZSlider.value = 0; 
+                        break;
+                }
+                updatePositionValues();
+            }
+        }
+
+        function resetRotation() {
+            if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
+                const model = sceneModels[selectedModelIndex].model;
+                model.rotation.y = 0;
+                rotYSlider.value = 0;
+                updatePositionValues();
+            }
+        }
+
+        function resetScale() {
+            if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
+                const model = sceneModels[selectedModelIndex].model;
+                model.scale.set(1, 1, 1);
+                scaleSlider.value = 1;
+                updatePositionValues();
+            }
+        }
+
+        // 便利機能
+        function duplicateModel() {
+            if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
+                const originalData = sceneModels[selectedModelIndex];
+                const original = originalData.model;
+                
+                // 複製作成
+                const clonedGeometry = original.geometry.clone();
+                const clonedMaterial = original.material.clone();
+                const clonedModel = new THREE.Mesh(clonedGeometry, clonedMaterial);
+                
+                // 少しずらして配置
+                clonedModel.position.copy(original.position);
+                clonedModel.position.x += 2;
+                clonedModel.rotation.copy(original.rotation);
+                clonedModel.scale.copy(original.scale);
+                
+                scene.add(clonedModel);
+                
+                const modelData = {
+                    model: clonedModel,
+                    name: originalData.name + '_copy',
+                    type: originalData.type,
+                    originalPosition: clonedModel.position.clone(),
+                    originalRotation: clonedModel.rotation.clone(),
+                    originalScale: clonedModel.scale.clone()
+                };
+                sceneModels.push(modelData);
+                
+                selectedModelIndex = sceneModels.length - 1;
+                updateSelectedModel();
+                updateSceneModelsList();
+                showStatus('✅ モデルを複製しました', 'success');
+            }
+        }
+
+        function centerModel() {
+            if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
+                const model = sceneModels[selectedModelIndex].model;
+                model.position.set(0, model.position.y, 0);
+                posXSlider.value = 0;
+                posZSlider.value = 0;
+                updatePositionValues();
+            }
+        }
+
+        function snapToGround() {
+            if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
+                const model = sceneModels[selectedModelIndex].model;
+                model.position.y = 0;
+                posYSlider.value = 0;
                 updatePositionValues();
             }
         }
