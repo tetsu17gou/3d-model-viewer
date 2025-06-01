@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="google-site-verification" content="tXfatBmSPBWjj037VFVbrAT2pNfMGDQlOmnhxgbmolE" />
     <title>3D Model Viewer - Public Access</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -15,10 +14,11 @@
         }
         
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             overflow-x: hidden;
+            min-height: 100vh;
         }
         
         .container {
@@ -37,13 +37,12 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
         
-        .loading-section {
+        .section {
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 30px;
             margin-bottom: 30px;
-            text-align: center;
         }
         
         .btn {
@@ -54,13 +53,14 @@
             border-radius: 25px;
             font-size: 1rem;
             cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: all 0.3s ease;
             margin: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
         
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
         }
         
         .btn:disabled {
@@ -69,12 +69,28 @@
             transform: none;
         }
         
-        .file-section {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
+        .nav-btn {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .nav-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .file-selector {
@@ -90,29 +106,6 @@
             justify-content: center;
             gap: 20px;
             margin-bottom: 20px;
-        }
-        
-        .nav-btn {
-            background: linear-gradient(45deg, #4facfe, #00f2fe);
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        
-        .nav-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-        
-        .nav-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none;
         }
         
         .file-display {
@@ -151,207 +144,6 @@
             flex-wrap: wrap;
         }
         
-        .scene-models {
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-        
-        .model-item {
-            background: rgba(255,255,255,0.15);
-            border-radius: 5px;
-            padding: 10px;
-            margin: 5px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .model-controls {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .small-btn {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            cursor: pointer;
-        }
-        
-        .position-controls {
-            margin-top: 20px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-            padding: 20px;
-        }
-        
-        .position-group {
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .position-group label {
-            width: 60px;
-            text-align: left;
-        }
-        
-        .selector-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .selector-item {
-            background: rgba(255,255,255,0.15);
-            border: 2px solid transparent;
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .selector-item:hover {
-            background: rgba(255,255,255,0.25);
-            transform: translateY(-2px);
-        }
-        
-        .selector-item.selected {
-            border-color: #4facfe;
-            background: rgba(79, 172, 254, 0.3);
-        }
-        
-        .selector-item h4 {
-            margin: 0 0 5px 0;
-            font-size: 0.9rem;
-        }
-        
-        .selector-item p {
-            margin: 0;
-            font-size: 0.8rem;
-            opacity: 0.8;
-        }
-        
-        select {
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 5px;
-            padding: 5px 10px;
-            margin: 0 10px;
-        }
-        
-        select option {
-            background: #333;
-            color: white;
-        }
-        
-        .viewer-section {
-            display: none;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-        
-        #viewer {
-            width: 100%;
-            height: 60vh;
-            border-radius: 10px;
-            background: rgba(0,0,0,0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        #lighting-controls {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 22%;
-            background: rgba(0,0,0,0.8);
-            border-radius: 10px;
-            padding: 15px;
-            color: white;
-            max-height: 80%;
-            overflow-y: auto;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        
-        #lighting-controls h3 {
-            margin: 0 0 10px 0;
-            font-size: 1rem;
-            text-align: center;
-        }
-        
-        #lighting-controls .position-group {
-            margin: 8px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        #lighting-controls .position-group label {
-            font-size: 0.8rem;
-            width: auto;
-            text-align: left;
-        }
-        
-        #lighting-controls input[type="range"] {
-            width: 100%;
-            margin: 0;
-        }
-        
-        #lighting-controls .small-btn {
-            padding: 4px 8px;
-            font-size: 0.7rem;
-            margin-top: 5px;
-        }
-        
-        .lighting-value {
-            font-size: 0.8rem;
-            color: #ccc;
-            text-align: center;
-        }
-        
-        .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 1.2rem;
-            color: white;
-        }
-        
-        .controls {
-            margin-top: 20px;
-            text-align: center;
-        }
-        
-        .control-group {
-            margin: 10px 0;
-        }
-        
-        .control-group label {
-            display: inline-block;
-            width: 100px;
-            text-align: left;
-        }
-        
-        input[type="range"] {
-            width: 200px;
-            margin: 0 10px;
-        }
-        
         .status {
             margin: 20px 0;
             padding: 15px;
@@ -370,13 +162,144 @@
             border: 1px solid rgba(0,255,0,0.5);
         }
         
+        .warning {
+            background: rgba(255,165,0,0.2);
+            border: 1px solid rgba(255,165,0,0.5);
+        }
+        
+        #viewer {
+            width: 100%;
+            height: 60vh;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .control-group {
+            margin: 10px 0;
+        }
+        
+        .control-group label {
+            display: inline-block;
+            width: 150px;
+            text-align: left;
+        }
+        
+        input[type="range"] {
+            width: 200px;
+            margin: 0 10px;
+        }
+        
+        select {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 5px;
+            padding: 8px 15px;
+            margin: 0 10px;
+        }
+        
+        select option {
+            background: #333;
+            color: white;
+        }
+        
+        .model-item {
+            background: rgba(255,255,255,0.15);
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .model-item:hover {
+            background: rgba(255,255,255,0.25);
+        }
+        
+        .model-controls {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .small-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .small-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .position-controls {
+            margin-top: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .position-group {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .position-group label {
+            width: 80px;
+            text-align: left;
+        }
+        
+        .help-text {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 10px;
+            text-align: center;
+            line-height: 1.4;
+        }
+        
         @media (max-width: 768px) {
             h1 { font-size: 2rem; }
             .container { padding: 10px; }
-            .loading-section, .file-section, .viewer-section { padding: 20px; }
+            .section { padding: 20px; }
             #viewer { height: 50vh; }
             input[type="range"] { width: 150px; }
-            .selector-grid { grid-template-columns: 1fr; }
+            .selector-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .file-display {
+                min-width: auto;
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -384,19 +307,21 @@
     <div class="container">
         <div class="header">
             <h1>🎯 3D Model Viewer</h1>
-            <p>認証不要で3Dモデルを表示</p>
+            <p>GLB/GLTFファイルを表示する3Dビューアー</p>
         </div>
         
-        <div id="loading-section" class="loading-section">
-            <h2>📁 3Dモデル読み込み中...</h2>
-            <p>指定フォルダからGLBファイルを取得しています</p>
-            <div id="load-status" class="status">🔄 ファイルリストを取得中...</div>
-        </div>
-        
-        <div id="file-section" class="file-section" style="display:none;">
-            <h2>🎨 3Dモデルを選択</h2>
+        <!-- ファイル選択セクション -->
+        <div id="file-section" class="section">
+            <h2>📁 3Dモデルを選択</h2>
             
-            <div class="file-selector">
+            <div id="status-area">
+                <div id="load-status" class="status">
+                    🔄 Google Driveフォルダからファイルを読み込み中...
+                </div>
+            </div>
+            
+            <!-- ファイル選択UI -->
+            <div class="file-selector" id="file-selector" style="display:none;">
                 <div class="selector-container">
                     <button id="prev-file" class="nav-btn">❮</button>
                     <div class="file-display">
@@ -409,86 +334,58 @@
                     <button id="next-file" class="nav-btn">❯</button>
                 </div>
                 <div class="file-actions">
-                    <button id="load-single" class="btn">🌄 背景として読み込み</button>
-                    <button id="add-to-scene" class="btn">🏠 オブジェクト追加</button>
+                    <button id="load-single" class="btn">🌄 単体表示</button>
+                    <button id="add-to-scene" class="btn">🏠 シーンに追加</button>
                     <button id="clear-scene" class="btn">🗑️ シーンクリア</button>
-                </div>
-                
-                <!-- ローカルファイル読み込み -->
-                <div class="local-file-section">
-                    <h4>📂 ローカルファイル読み込み</h4>
-                    <input type="file" id="local-file-input" accept=".glb,.gltf" style="display:none;">
-                    <div class="local-file-actions">
-                        <button id="load-local-background" class="btn">💻 ローカル背景読み込み</button>
-                        <button id="load-local-object" class="btn">📱 ローカルオブジェクト読み込み</button>
-                    </div>
-                </div>
-                
-                <!-- 手動ファイル追加 -->
-                <div class="local-file-section">
-                    <h4>🔗 Google Drive共有リンク追加</h4>
-                    <div class="local-file-actions">
-                        <button id="add-manual-file" class="btn">➕ 共有リンクから追加</button>
-                    </div>
-                    <p style="font-size: 0.8rem; margin-top: 5px; opacity: 0.8;">
-                        Google Driveファイルの共有リンクを使用して手動で追加
-                    </p>
                 </div>
             </div>
             
-            <div id="scene-models" class="scene-models" style="display:none;">
-                <h3>📦 シーン内のモデル</h3>
+            <!-- ローカルファイル読み込み -->
+            <div class="local-file-section">
+                <h4>💻 ローカルファイル読み込み</h4>
+                <input type="file" id="local-file-input" accept=".glb,.gltf" style="display:none;">
+                <div class="local-file-actions">
+                    <button id="load-local-single" class="btn">📱 ローカルファイル読み込み</button>
+                </div>
+                <p class="help-text">
+                    お使いのデバイスからGLB/GLTFファイルを選択して表示できます
+                </p>
+            </div>
+            
+            <!-- Google Drive共有リンク追加 -->
+            <div class="local-file-section">
+                <h4>🔗 Google Drive共有リンク追加</h4>
+                <div class="local-file-actions">
+                    <button id="add-manual-file" class="btn">➕ 共有リンクから追加</button>
+                </div>
+                <p class="help-text">
+                    Google DriveのGLB/GLTFファイル共有リンクを使用して追加<br>
+                    ファイルは「リンクを知っている全員」に共有設定する必要があります
+                </p>
+            </div>
+            
+            <!-- シーン内モデル一覧 -->
+            <div id="scene-models" class="local-file-section" style="display:none;">
+                <h4>📦 シーン内のモデル</h4>
                 <div id="models-list"></div>
             </div>
         </div>
         
-        <div id="viewer-section" class="viewer-section">
+        <!-- 3Dビューアーセクション -->
+        <div id="viewer-section" class="section" style="display:none;">
             <h2 id="model-title">3Dモデル表示</h2>
-            <button id="back-to-files" class="btn">← ファイル一覧に戻る</button>
+            <button id="back-to-files" class="btn">← ファイル選択に戻る</button>
+            
             <div id="viewer">
-                <div class="loading" id="loading">読み込み中...</div>
-                
-                <!-- ライティング調整パネル（3Dビューワー内） -->
-                <div id="lighting-controls" style="display:none;">
-                    <h3>💡 ライト調整</h3>
-                    <div class="position-group">
-                        <label>環境光:</label>
-                        <input type="range" id="ambient-intensity" min="0" max="2" step="0.1" value="1.0">
-                        <div class="lighting-value" id="ambient-intensity-value">1.0</div>
-                    </div>
-                    <div class="position-group">
-                        <label>太陽光:</label>
-                        <input type="range" id="directional-intensity" min="0" max="3" step="0.1" value="1.5">
-                        <div class="lighting-value" id="directional-intensity-value">1.5</div>
-                    </div>
-                    <div class="position-group">
-                        <label>太陽X:</label>
-                        <input type="range" id="sun-x" min="-10" max="10" step="0.5" value="5">
-                        <div class="lighting-value" id="sun-x-value">5</div>
-                    </div>
-                    <div class="position-group">
-                        <label>太陽Y:</label>
-                        <input type="range" id="sun-y" min="0" max="20" step="0.5" value="10">
-                        <div class="lighting-value" id="sun-y-value">10</div>
-                    </div>
-                    <div class="position-group">
-                        <label>太陽Z:</label>
-                        <input type="range" id="sun-z" min="-10" max="10" step="0.5" value="5">
-                        <div class="lighting-value" id="sun-z-value">5</div>
-                    </div>
-                    <div class="position-group">
-                        <label>補助光:</label>
-                        <input type="range" id="point-intensity" min="0" max="2" step="0.1" value="0.8">
-                        <div class="lighting-value" id="point-intensity-value">0.8</div>
-                    </div>
-                    <div class="position-group">
-                        <button class="small-btn" onclick="resetLighting()">リセット</button>
-                    </div>
+                <div class="loading" id="loading" style="display:none;">
+                    🔄 読み込み中...<br>
+                    <small>しばらくお待ちください</small>
                 </div>
             </div>
             
+            <!-- モデル操作コントロール -->
             <div id="position-controls" class="position-controls" style="display:none;">
-                <h3>🎯 選択中モデルの位置調整: <span id="selected-model-name">なし</span></h3>
+                <h3>🎯 選択中モデル: <span id="selected-model-name">なし</span></h3>
                 <div class="position-group">
                     <label>X位置:</label>
                     <input type="range" id="pos-x" min="-20" max="20" step="0.1" value="0">
@@ -508,7 +405,7 @@
                     <button class="small-btn" onclick="resetPosition('z')">リセット</button>
                 </div>
                 <div class="position-group">
-                    <label>回転Y:</label>
+                    <label>回転:</label>
                     <input type="range" id="rot-y" min="0" max="6.28" step="0.1" value="0">
                     <span id="rot-y-value">0°</span>
                     <button class="small-btn" onclick="resetRotation()">リセット</button>
@@ -522,79 +419,88 @@
                 <div class="position-group">
                     <button class="btn" onclick="duplicateModel()">🔄 複製</button>
                     <button class="btn" onclick="centerModel()">📍 中央配置</button>
-                    <button class="btn" onclick="snapToGround()">⬇️ 地面に配置</button>
                 </div>
             </div>
             
+            <!-- ビューアーコントロール -->
             <div class="controls">
                 <div class="control-group">
-                    <label>シーン回転速度:</label>
-                    <input type="range" id="rotation-speed" min="0" max="0.05" step="0.001" value="0.01">
+                    <label>自動回転速度:</label>
+                    <input type="range" id="rotation-speed" min="0" max="0.02" step="0.001" value="0.005">
+                    <span id="rotation-speed-value">0.005</span>
                 </div>
                 <div class="control-group">
                     <label>ライティング:</label>
                     <select id="lighting-select">
                         <option value="sunrise">🌅 日の出</option>
-                        <option value="noon" selected>☀️ 昼過ぎ</option>
+                        <option value="noon" selected>☀️ 昼間</option>
+                        <option value="sunset">🌇 夕焼け</option>
                         <option value="night">🌙 夜</option>
-                        <option value="custom">⚙️ カスタム</option>
                     </select>
                 </div>
                 <div class="control-group">
-                    <button id="reset-camera" class="btn">カメラリセット</button>
-                    <button id="toggle-rotation" class="btn">シーン回転 ON/OFF</button>
+                    <button id="reset-camera" class="btn">📷 カメラリセット</button>
+                    <button id="toggle-rotation" class="btn">🔄 自動回転 ON/OFF</button>
                 </div>
-            </div>
-            
-            <!-- オブジェクト選択バー -->
-            <div id="object-selector" class="position-controls" style="display:none;">
-                <h3>🎯 オブジェクト選択</h3>
-                <div class="selector-grid" id="selector-grid"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // 設定：指定フォルダのID
+        // Google Drive API設定
+        const API_KEY = 'AIzaSyCCGWquJDgJPhMOdelsS3CmPm_2DMSfOSg';
         const FOLDER_ID = '1U0aIZZRE6tXqbosBQL4SHT0OKwQiY14c';
         
-        // ファイル管理
+        // グローバル変数
         let currentFiles = [];
         let currentFileIndex = 0;
-        
-        // 3Dシーン管理
         let sceneModels = [];
         let selectedModelIndex = -1;
-
+        
         // Three.js変数
-        let scene, camera, renderer, controls, model;
+        let scene, camera, renderer;
         let animationId;
         let autoRotate = true;
-
+        let sceneGroup;
+        let ambientLight, directionalLight, pointLight;
+        
+        // カメラコントロール
+        let cameraControls = { 
+            rotationX: 0.3, 
+            rotationY: 0, 
+            distance: 10 
+        };
+        
         // DOM要素
-        const loadingSection = document.getElementById('loading-section');
         const fileSection = document.getElementById('file-section');
         const viewerSection = document.getElementById('viewer-section');
         const loadStatus = document.getElementById('load-status');
-        const backToFiles = document.getElementById('back-to-files');
-        const modelTitle = document.getElementById('model-title');
-        const loading = document.getElementById('loading');
-        const rotationSpeedSlider = document.getElementById('rotation-speed');
-        const resetCameraBtn = document.getElementById('reset-camera');
-        const toggleRotationBtn = document.getElementById('toggle-rotation');
-        
-        // ファイル選択UI
-        const prevFileBtn = document.getElementById('prev-file');
-        const nextFileBtn = document.getElementById('next-file');
+        const fileSelector = document.getElementById('file-selector');
         const currentFileName = document.getElementById('current-file-name');
         const currentFileSize = document.getElementById('current-file-size');
         const fileCounter = document.getElementById('file-counter');
+        const prevFileBtn = document.getElementById('prev-file');
+        const nextFileBtn = document.getElementById('next-file');
         const loadSingleBtn = document.getElementById('load-single');
         const addToSceneBtn = document.getElementById('add-to-scene');
         const clearSceneBtn = document.getElementById('clear-scene');
+        const localFileInput = document.getElementById('local-file-input');
+        const loadLocalSingleBtn = document.getElementById('load-local-single');
+        const addManualFileBtn = document.getElementById('add-manual-file');
         const sceneModelsSection = document.getElementById('scene-models');
         const modelsList = document.getElementById('models-list');
+        const backToFiles = document.getElementById('back-to-files');
+        const modelTitle = document.getElementById('model-title');
+        const loading = document.getElementById('loading');
         const positionControls = document.getElementById('position-controls');
+        const selectedModelName = document.getElementById('selected-model-name');
+        const rotationSpeedSlider = document.getElementById('rotation-speed');
+        const rotationSpeedValue = document.getElementById('rotation-speed-value');
+        const lightingSelect = document.getElementById('lighting-select');
+        const resetCameraBtn = document.getElementById('reset-camera');
+        const toggleRotationBtn = document.getElementById('toggle-rotation');
+        
+        // 位置制御スライダー
         const posXSlider = document.getElementById('pos-x');
         const posYSlider = document.getElementById('pos-y');
         const posZSlider = document.getElementById('pos-z');
@@ -605,88 +511,202 @@
         const posZValue = document.getElementById('pos-z-value');
         const rotYValue = document.getElementById('rot-y-value');
         const scaleValue = document.getElementById('scale-value');
-        const selectedModelName = document.getElementById('selected-model-name');
-        const lightingSelect = document.getElementById('lighting-select');
-        const objectSelector = document.getElementById('object-selector');
-        const selectorGrid = document.getElementById('selector-grid');
         
-        // ライティング調整要素
-        const ambientIntensitySlider = document.getElementById('ambient-intensity');
-        const directionalIntensitySlider = document.getElementById('directional-intensity');
-        const sunXSlider = document.getElementById('sun-x');
-        const sunYSlider = document.getElementById('sun-y');
-        const sunZSlider = document.getElementById('sun-z');
-        const pointIntensitySlider = document.getElementById('point-intensity');
-        const ambientIntensityValue = document.getElementById('ambient-intensity-value');
-        const directionalIntensityValue = document.getElementById('directional-intensity-value');
-        const sunXValue = document.getElementById('sun-x-value');
-        const sunYValue = document.getElementById('sun-y-value');
-        const sunZValue = document.getElementById('sun-z-value');
-        const pointIntensityValue = document.getElementById('point-intensity-value');
-        
-        // ローカルファイル読み込み要素
-        const localFileInput = document.getElementById('local-file-input');
-        const loadLocalBackgroundBtn = document.getElementById('load-local-background');
-        const loadLocalObjectBtn = document.getElementById('load-local-object');
-        const addManualFileBtn = document.getElementById('add-manual-file');
-        let isLoadingAsBackground = false;
-
-        // ライティング管理
-        let ambientLight, directionalLight, pointLight;
-        let sceneGroup; // 全オブジェクトを格納するグループ
-        let cameraControls = { rotationX: 0, rotationY: 0, distance: 5 };
-
         // 初期化
         window.addEventListener('load', () => {
-            console.log('📄 ページ読み込み完了');
-            loadPublicFiles();
+            console.log('3D Model Viewer 初期化');
+            setupEventListeners();
+            loadGoogleDriveFiles(); // Google Drive APIを使用してファイル読み込み
         });
-
-        // Google Drive からファイル読み込み（簡潔版）
-        async function loadPublicFiles() {
+        
+        // イベントリスナー設定
+        function setupEventListeners() {
+            // ファイル操作
+            prevFileBtn.addEventListener('click', () => navigateFiles('prev'));
+            nextFileBtn.addEventListener('click', () => navigateFiles('next'));
+            loadSingleBtn.addEventListener('click', loadSingleModel);
+            addToSceneBtn.addEventListener('click', addModelToScene);
+            clearSceneBtn.addEventListener('click', clearScene);
+            
+            // ローカルファイル
+            loadLocalSingleBtn.addEventListener('click', () => {
+                localFileInput.click();
+            });
+            localFileInput.addEventListener('change', handleLocalFile);
+            
+            // 手動追加
+            addManualFileBtn.addEventListener('click', addManualFile);
+            
+            // ビューアー操作
+            backToFiles.addEventListener('click', () => {
+                viewerSection.style.display = 'none';
+                fileSection.style.display = 'block';
+            });
+            
+            resetCameraBtn.addEventListener('click', resetCamera);
+            toggleRotationBtn.addEventListener('click', toggleAutoRotation);
+            lightingSelect.addEventListener('change', changeLighting);
+            
+            // 回転速度
+            rotationSpeedSlider.addEventListener('input', () => {
+                rotationSpeedValue.textContent = rotationSpeedSlider.value;
+            });
+            
+            // 位置制御
+            posXSlider.addEventListener('input', updateSelectedModelPosition);
+            posYSlider.addEventListener('input', updateSelectedModelPosition);
+            posZSlider.addEventListener('input', updateSelectedModelPosition);
+            rotYSlider.addEventListener('input', updateSelectedModelPosition);
+            scaleSlider.addEventListener('input', updateSelectedModelPosition);
+        }
+        
+        // Google Drive APIを使用してファイル読み込み
+        async function loadGoogleDriveFiles() {
             try {
-                showLoadStatus('🔄 Google Driveフォルダからファイルを検索中...', '');
+                showStatus('🔄 Google Drive APIでフォルダ内のファイルを検索中...', '');
                 
-                // フォルダID確認
-                console.log('Google Drive フォルダID:', FOLDER_ID);
-                console.log('フォルダURL:', `https://drive.google.com/drive/folders/${FOLDER_ID}`);
+                const apiUrl = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents&key=${API_KEY}&fields=files(id,name,size,webContentLink,webViewLink)`;
                 
-                // 残念ながら、Google DriveのAPIキーなしでの自動ファイル検出は
-                // セキュリティ制限により困難です
+                console.log('Google Drive API呼び出し:', apiUrl);
                 
-                showLoadStatus('❌ Google Driveフォルダからの自動ファイル検出に失敗しました', 'error');
-                showLoadStatus('📁 フォルダID: ' + FOLDER_ID + ' からGLBファイルを読み込めませんでした', 'error');
-                showLoadStatus('🔗 手動で共有リンクから追加するか、ローカルファイルをご利用ください', '');
+                const response = await fetch(apiUrl);
                 
-                // 空のファイルリストで手動追加を促す
-                displayFiles([]);
+                if (!response.ok) {
+                    throw new Error(`Google Drive API エラー: ${response.status} ${response.statusText}`);
+                }
                 
-                setTimeout(() => {
-                    loadingSection.style.display = 'none';
-                    fileSection.style.display = 'block';
-                }, 2000);
+                const data = await response.json();
+                console.log('Google Drive API レスポンス:', data);
+                
+                if (data.error) {
+                    throw new Error(`API エラー: ${data.error.message}`);
+                }
+                
+                // GLB/GLTFファイルのみフィルタリング
+                const glbFiles = data.files.filter(file => 
+                    file.name.toLowerCase().endsWith('.glb') || 
+                    file.name.toLowerCase().endsWith('.gltf')
+                );
+                
+                console.log(`GLB/GLTFファイルを${glbFiles.length}個発見:`, glbFiles);
+                
+                if (glbFiles.length === 0) {
+                    showStatus('📁 フォルダ内にGLB/GLTFファイルが見つかりませんでした', 'warning');
+                    showStatus('手動でファイルを追加するか、ローカルファイルをご利用ください', '');
+                } else {
+                    // ファイル情報を整形
+                    currentFiles = glbFiles.map(file => ({
+                        id: file.id,
+                        name: file.name,
+                        size: file.size ? `${(parseInt(file.size) / 1024 / 1024).toFixed(2)} MB` : '不明',
+                        webContentLink: `https://drive.google.com/uc?export=download&id=${file.id}`,
+                        webViewLink: file.webViewLink,
+                        isReal: true,
+                        source: 'drive'
+                    }));
+                    
+                    currentFileIndex = 0;
+                    fileSelector.style.display = 'block';
+                    updateFileDisplay();
+                    
+                    showStatus(`✅ ${glbFiles.length}個のGLB/GLTFファイルを発見しました`, 'success');
+                }
                 
             } catch (error) {
-                console.error('Google Drive読み込みエラー:', error);
-                showLoadStatus('❌ Google Driveアクセスエラー: フォルダが公開されているか確認してください', 'error');
-                
-                setTimeout(() => {
-                    loadingSection.style.display = 'none';
-                    fileSection.style.display = 'block';
-                }, 2000);
+                console.error('Google Drive API エラー:', error);
+                showStatus(`❌ Google Drive読み込みエラー: ${error.message}`, 'error');
+                showStatus('手動でファイルを追加するか、ローカルファイルをご利用ください', '');
             }
         }
+        
+        // ステータス表示
+        function showStatus(message, type = '') {
+            loadStatus.textContent = message;
+            loadStatus.className = `status ${type}`;
+        }
+        
+        // ローカルファイル処理
+        function handleLocalFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.name.toLowerCase().endsWith('.glb') && !file.name.toLowerCase().endsWith('.gltf')) {
+                showStatus('❌ GLBまたはGLTFファイルを選択してください', 'error');
+                return;
+            }
+            
+            showViewer(file.name);
+            showLoading(true);
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const arrayBuffer = e.target.result;
+                    await loadGLBModel(arrayBuffer, file.name, true, 'local');
+                } catch (error) {
+                    showStatus('❌ ファイル読み込みエラー: ' + error.message, 'error');
+                    showLoading(false);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            localFileInput.value = '';
+        }
+        
+        // Google Drive共有リンクからファイル追加
+        function addManualFile() {
+            const shareUrl = prompt(`Google DriveのGLB/GLTFファイル共有リンクを入力してください:
 
-        // 未使用の関数を削除
-        // loadFromRSSFeed, loadFromPublicFolderHTML, loadIndividualFiles, extractFilesFromHTML は削除
+例: https://drive.google.com/file/d/ファイルID/view
 
-        // ファイルIDを自動抽出するヘルパー関数
+注意: ファイルは「リンクを知っている全員」に共有設定してください`);
+            
+            if (!shareUrl) return;
+            
+            const fileId = extractFileIdFromUrl(shareUrl);
+            if (!fileId) {
+                alert(`❌ 有効なGoogle Drive共有リンクではありません
+
+正しい形式:
+https://drive.google.com/file/d/ファイルID/view
+または
+https://drive.google.com/open?id=ファイルID`);
+                return;
+            }
+            
+            const fileName = prompt('ファイル名を入力してください:', 'model.glb') || 'manual_file.glb';
+            
+            if (!fileName.toLowerCase().endsWith('.glb') && !fileName.toLowerCase().endsWith('.gltf')) {
+                alert('⚠️ ファイル名は .glb または .gltf で終わる必要があります');
+                return;
+            }
+            
+            const manualFile = {
+                id: fileId,
+                name: fileName,
+                size: 'Google Drive',
+                webContentLink: `https://drive.google.com/uc?export=download&id=${fileId}`,
+                webViewLink: shareUrl,
+                isReal: true,
+                source: 'manual'
+            };
+            
+            currentFiles.push(manualFile);
+            
+            if (currentFiles.length === 1) {
+                currentFileIndex = 0;
+                fileSelector.style.display = 'block';
+            }
+            
+            updateFileDisplay();
+            showStatus(`✅ ファイル "${fileName}" を追加しました`, 'success');
+        }
+        
+        // URLからファイルID抽出
         function extractFileIdFromUrl(shareUrl) {
-            // Google Driveの共有URLからファイルIDを抽出
             const patterns = [
-                /\/file\/d\/([a-zA-Z0-9-_]+)/,  // /file/d/ID/view
-                /id=([a-zA-Z0-9-_]+)/,          // ?id=ID
-                /([a-zA-Z0-9-_]{25,})/          // 長い英数字の文字列
+                /\/file\/d\/([a-zA-Z0-9-_]+)/,
+                /id=([a-zA-Z0-9-_]+)/,
+                /([a-zA-Z0-9-_]{25,})/
             ];
             
             for (const pattern of patterns) {
@@ -697,208 +717,14 @@
             }
             return null;
         }
-
-        // 手動でファイルを追加する関数（修正版）
-        function addManualFile() {
-            const shareUrl = prompt('Google DriveのGLBファイル共有リンクを入力してください:\n\n例: https://drive.google.com/file/d/ファイルID/view');
-            if (!shareUrl) return;
-            
-            const fileId = extractFileIdFromUrl(shareUrl);
-            if (!fileId) {
-                alert('❌ 有効なGoogle Drive共有リンクではありません\n\n正しい形式:\nhttps://drive.google.com/file/d/ファイルID/view');
-                return;
-            }
-            
-            const fileName = prompt('ファイル名を入力してください:', 'model.glb') || 'manual_file.glb';
-            
-            // GLBファイル拡張子チェック
-            if (!fileName.toLowerCase().endsWith('.glb') && !fileName.toLowerCase().endsWith('.gltf')) {
-                alert('⚠️ ファイル名は .glb または .gltf で終わる必要があります');
-                return;
-            }
-            
-            const manualFile = {
-                id: fileId,
-                name: fileName,
-                size: '手動追加',
-                webContentLink: `https://drive.google.com/uc?export=download&id=${fileId}`,
-                webViewLink: `https://drive.google.com/file/d/${fileId}/view`,
-                isReal: true,
-                source: 'manual'
-            };
-            
-            // ファイルの有効性を確認
-            showLoadStatus(`🔄 ファイル "${fileName}" の有効性を確認中...`, '');
-            
-            fetch(manualFile.webContentLink, { 
-                method: 'HEAD',
-                mode: 'no-cors'
-            }).then(() => {
-                // ファイルリストに追加
-                currentFiles.push(manualFile);
-                
-                // 表示を更新
-                if (currentFiles.length === 1) {
-                    currentFileIndex = 0;
-                }
-                updateFileDisplay();
-                showLoadStatus(`✅ ファイル "${fileName}" を追加しました`, 'success');
-                console.log('手動ファイル追加成功:', manualFile);
-                
-            }).catch(error => {
-                console.error('ファイル確認エラー:', error);
-                showLoadStatus(`❌ ファイル "${fileName}" にアクセスできません。公開設定を確認してください。`, 'error');
-            });
-        }
-
-        // デモファイル読み込み（フォールバック）
-        function loadDemoFiles() {
-            const demoFiles = [
-                {
-                    id: 'demo1',
-                    name: 'landscape.glb',
-                    size: '2048000',
-                    webContentLink: null
-                },
-                {
-                    id: 'demo2',
-                    name: 'house.glb',
-                    size: '1024000',
-                    webContentLink: null
-                },
-                {
-                    id: 'demo3',
-                    name: 'tree.glb',
-                    size: '512000',
-                    webContentLink: null
-                }
-            ];
-            
-            displayFiles(demoFiles);
-            showLoadStatus('🎯 デモファイルを表示中（実際のフォルダにアクセスできませんでした）', '');
-            setTimeout(() => {
-                loadingSection.style.display = 'none';
-                fileSection.style.display = 'block';
-            }, 1000);
-        }
-
-        // 実際のファイル読み込み（Google Drive）修正版
-        async function loadActualFile(fileId, fileName) {
-            try {
-                showLoading(true);
-                console.log(`Google Driveファイル読み込み開始: ${fileName} (ID: ${fileId})`);
-                
-                // Google Driveの直接ダウンロードURL
-                const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-                console.log('ダウンロードURL:', downloadUrl);
-                
-                const response = await fetch(downloadUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/octet-stream, */*'
-                    }
-                });
-                
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const contentType = response.headers.get('content-type');
-                console.log('Content-Type:', contentType);
-                
-                // レスポンスがHTMLの場合（Google Drive認証エラー）
-                if (contentType && contentType.includes('text/html')) {
-                    const text = await response.text();
-                    console.log('HTML Response (first 500 chars):', text.substring(0, 500));
-                    throw new Error('Google Driveファイルへの直接アクセスが拒否されました。ファイルの公開設定を確認してください。');
-                }
-                
-                const arrayBuffer = await response.arrayBuffer();
-                console.log('ArrayBuffer size:', arrayBuffer.byteLength);
-                
-                if (arrayBuffer.byteLength === 0) {
-                    throw new Error('ファイルサイズが0バイトです');
-                }
-                
-                return arrayBuffer;
-                
-            } catch (error) {
-                console.error('Google Driveファイル読み込みエラー:', error);
-                throw error;
-            }
-        }
-
-        // ローカルファイル読み込み機能
-        function loadLocalBackground() {
-            isLoadingAsBackground = true;
-            localFileInput.click();
-        }
-
-        function loadLocalObject() {
-            isLoadingAsBackground = false;
-            localFileInput.click();
-        }
-
-        // ローカルファイル処理
-        function handleLocalFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (!file.name.toLowerCase().endsWith('.glb') && !file.name.toLowerCase().endsWith('.gltf')) {
-                showLoadStatus('❌ GLBまたはGLTFファイルを選択してください', 'error');
-                return;
-            }
-
-            showViewer(file.name);
-            showLoading(true);
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const arrayBuffer = e.target.result;
-                    await loadGLBModel(arrayBuffer, file.name, isLoadingAsBackground, 'local');
-                } catch (error) {
-                    showLoadStatus('❌ ファイル読み込みエラー: ' + error.message, 'error');
-                    showLoading(false);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-            
-            // ファイル入力をリセット
-            localFileInput.value = '';
-        }
-
-        // ファイル表示
-        function displayFiles(files) {
-            currentFiles = files;
-            currentFileIndex = 0;
-
-            if (files.length === 0) {
-                currentFileName.textContent = 'GLBファイルが見つかりませんでした';
-                currentFileSize.textContent = '';
-                fileCounter.textContent = '0 / 0';
-                prevFileBtn.disabled = true;
-                nextFileBtn.disabled = true;
-                loadSingleBtn.disabled = true;
-                addToSceneBtn.disabled = true;
-                return;
-            }
-
-            updateFileDisplay();
-        }
-
+        
         // ファイル表示更新
         function updateFileDisplay() {
             if (currentFiles.length === 0) return;
             
             const file = currentFiles[currentFileIndex];
-            const size = file.size ? (parseInt(file.size) / 1024 / 1024).toFixed(2) + ' MB' : '不明';
-            
             currentFileName.textContent = file.name;
-            currentFileSize.textContent = `サイズ: ${size}`;
+            currentFileSize.textContent = `サイズ: ${file.size}`;
             fileCounter.textContent = `${currentFileIndex + 1} / ${currentFiles.length}`;
             
             prevFileBtn.disabled = currentFileIndex === 0;
@@ -906,7 +732,7 @@
             loadSingleBtn.disabled = false;
             addToSceneBtn.disabled = false;
         }
-
+        
         // ファイルナビゲーション
         function navigateFiles(direction) {
             if (direction === 'prev' && currentFileIndex > 0) {
@@ -916,262 +742,175 @@
             }
             updateFileDisplay();
         }
-
-        // 3Dモデル読み込み（単体表示）修正版
+        
+        // 単体モデル表示
         async function loadSingleModel() {
             if (currentFiles.length === 0) {
-                showLoadStatus('❌ 読み込めるファイルがありません。共有リンクから追加してください。', 'error');
+                showStatus('❌ 読み込めるファイルがありません', 'error');
                 return;
             }
             
             const file = currentFiles[currentFileIndex];
+            showViewer(file.name);
+            clearScene();
             
             try {
-                showViewer(file.name);
-                clearScene();
-                
-                console.log('ファイル読み込み開始:', file);
-                
-                if (file.isReal && file.source !== 'demo') {
-                    console.log('Google Driveファイルとして読み込み試行:', file.webContentLink);
-                    
-                    try {
-                        const arrayBuffer = await loadActualFile(file.id, file.name);
-                        console.log('ArrayBuffer取得成功, サイズ:', arrayBuffer.byteLength);
-                        
-                        if (arrayBuffer.byteLength === 0) {
-                            throw new Error('ファイルサイズが0バイトです');
-                        }
-                        
-                        await loadGLBModel(arrayBuffer, file.name, true, 'drive');
-                        
-                    } catch (driveError) {
-                        console.error('Google Driveファイル読み込み失敗:', driveError);
-                        showLoadStatus(`❌ Google Driveファイル "${file.name}" の読み込みに失敗しました`, 'error');
-                        showLoadStatus(`🔍 エラー詳細: ${driveError.message}`, 'error');
-                        showLoadStatus(`📋 ファイルが公開設定されているか、ダウンロード可能か確認してください`, '');
-                        
-                        // デモ表示にフォールバック
-                        console.log('デモ表示にフォールバック');
-                        await loadGLBModel(null, file.name + ' (読み込み失敗 - デモ表示)', true, 'demo');
-                    }
+                if (file.source === 'drive' || file.source === 'manual') {
+                    const arrayBuffer = await loadGoogleDriveFile(file.id, file.name);
+                    await loadGLBModel(arrayBuffer, file.name, true, 'drive');
                 } else {
-                    console.log('デモファイルとして表示');
-                    await loadGLBModel(null, file.name, true, 'demo');
+                    showStatus('❌ ローカルファイルは直接読み込んでください', 'error');
                 }
-                
             } catch (error) {
-                console.error('loadSingleModel エラー:', error);
-                showLoadStatus('❌ モデル読み込みエラー: ' + error.message, 'error');
+                console.error('loadSingleModel error:', error);
+                showStatus('❌ モデル読み込みエラー: ' + error.message, 'error');
                 showLoading(false);
             }
         }
-
-        // 3Dモデルをシーンに追加（修正版）
+        
+        // シーンにモデル追加
         async function addModelToScene() {
             if (currentFiles.length === 0) {
-                showLoadStatus('❌ 読み込めるファイルがありません。共有リンクから追加してください。', 'error');
+                showStatus('❌ 読み込めるファイルがありません', 'error');
                 return;
             }
             
             const file = currentFiles[currentFileIndex];
+            showViewer(`シーン: ${sceneModels.length + 1}個のモデル`);
             
             try {
-                showViewer(`シーン: ${sceneModels.length + 1}個のモデル`);
-                
-                console.log('シーンにファイル追加:', file);
-                
-                if (file.isReal && file.source !== 'demo') {
-                    console.log('Google Driveファイルとして読み込み試行:', file.webContentLink);
-                    
-                    try {
-                        const arrayBuffer = await loadActualFile(file.id, file.name);
-                        console.log('ArrayBuffer取得成功, サイズ:', arrayBuffer.byteLength);
-                        
-                        if (arrayBuffer.byteLength === 0) {
-                            throw new Error('ファイルサイズが0バイトです');
-                        }
-                        
-                        await loadGLBModel(arrayBuffer, file.name, false, 'drive');
-                        
-                    } catch (driveError) {
-                        console.error('Google Driveファイル読み込み失敗:', driveError);
-                        showLoadStatus(`❌ Google Driveファイル "${file.name}" の読み込みに失敗しました`, 'error');
-                        showLoadStatus(`🔍 エラー詳細: ${driveError.message}`, 'error');
-                        
-                        // デモ表示にフォールバック
-                        console.log('デモ表示にフォールバック');
-                        await loadGLBModel(null, file.name + ' (読み込み失敗 - デモ表示)', false, 'demo');
-                    }
+                if (file.source === 'drive' || file.source === 'manual') {
+                    const arrayBuffer = await loadGoogleDriveFile(file.id, file.name);
+                    await loadGLBModel(arrayBuffer, file.name, false, 'drive');
                 } else {
-                    console.log('デモファイルとして表示');
-                    await loadGLBModel(null, file.name, false, 'demo');
+                    showStatus('❌ ローカルファイルは直接読み込んでください', 'error');
                 }
-                
             } catch (error) {
-                console.error('addModelToScene エラー:', error);
-                showLoadStatus('❌ モデル読み込みエラー: ' + error.message, 'error');
+                console.error('addModelToScene error:', error);
+                showStatus('❌ モデル読み込みエラー: ' + error.message, 'error');
                 showLoading(false);
             }
         }
-
+        
+        // Google Driveファイル読み込み
+        async function loadGoogleDriveFile(fileId, fileName) {
+            try {
+                showLoading(true);
+                const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                
+                const response = await fetch(downloadUrl, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ファイルにアクセスできません`);
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('text/html')) {
+                    throw new Error('ファイルの公開設定を確認してください。「リンクを知っている全員」に設定する必要があります。');
+                }
+                
+                const arrayBuffer = await response.arrayBuffer();
+                if (arrayBuffer.byteLength === 0) {
+                    throw new Error('ファイルサイズが0バイトです');
+                }
+                
+                return arrayBuffer;
+                
+            } catch (error) {
+                throw new Error(`Google Driveファイル読み込み失敗: ${error.message}`);
+            }
+        }
+        
         // Three.js初期化
         function initThreeJS() {
             const viewer = document.getElementById('viewer');
             
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB); // 昼の空色
-
+            scene.background = new THREE.Color(0x87CEEB);
+            
             camera = new THREE.PerspectiveCamera(75, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
             updateCameraPosition();
-
+            
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(viewer.clientWidth, viewer.clientHeight);
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             viewer.appendChild(renderer.domElement);
-
-            // シーングループ作成
+            
             sceneGroup = new THREE.Group();
             scene.add(sceneGroup);
-
-            // ライティング初期化
+            
             initLighting();
-
             addCameraControls();
+            
             window.addEventListener('resize', onWindowResize);
             animate();
         }
-
+        
         // ライティング初期化
         function initLighting() {
-            // 環境光（より明るく）
             ambientLight = new THREE.AmbientLight(0x404040, 1.0);
             scene.add(ambientLight);
-
-            // 太陽光（方向光）- より明るく
+            
             directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
             directionalLight.position.set(5, 10, 5);
             directionalLight.castShadow = true;
             directionalLight.shadow.mapSize.width = 2048;
             directionalLight.shadow.mapSize.height = 2048;
-            directionalLight.shadow.camera.near = 0.5;
-            directionalLight.shadow.camera.far = 50;
-            directionalLight.shadow.camera.left = -20;
-            directionalLight.shadow.camera.right = 20;
-            directionalLight.shadow.camera.top = 20;
-            directionalLight.shadow.camera.bottom = -20;
             scene.add(directionalLight);
-
-            // 補助ライト（点光源）
+            
             pointLight = new THREE.PointLight(0xffffff, 0.8, 100);
             pointLight.position.set(-5, 5, -5);
             scene.add(pointLight);
-
-            // 追加の補助ライト
-            const fillLight = new THREE.DirectionalLight(0x8888ff, 0.3);
-            fillLight.position.set(-5, 0, -5);
-            scene.add(fillLight);
-
-            // 初期設定を適用
+            
             setLighting('noon');
-            updateLightingControls();
         }
-
+        
         // ライティング設定
         function setLighting(timeOfDay) {
             switch(timeOfDay) {
                 case 'sunrise':
-                    // 日の出：暖かいオレンジ色
                     scene.background = new THREE.Color(0xFFA07A);
-                    ambientLight.color.setHex(0x404040);
                     ambientLight.intensity = 0.8;
                     directionalLight.color.setHex(0xFFB366);
                     directionalLight.intensity = 1.2;
                     directionalLight.position.set(10, 3, 5);
-                    pointLight.color.setHex(0xFF8C69);
-                    pointLight.intensity = 0.6;
                     break;
                     
                 case 'noon':
-                    // 昼過ぎ：明るい白色光
                     scene.background = new THREE.Color(0x87CEEB);
-                    ambientLight.color.setHex(0x404040);
                     ambientLight.intensity = 1.0;
                     directionalLight.color.setHex(0xffffff);
                     directionalLight.intensity = 1.5;
                     directionalLight.position.set(5, 10, 5);
-                    pointLight.color.setHex(0xffffff);
-                    pointLight.intensity = 0.8;
+                    break;
+                    
+                case 'sunset':
+                    scene.background = new THREE.Color(0xFF8C69);
+                    ambientLight.intensity = 0.6;
+                    directionalLight.color.setHex(0xFF6347);
+                    directionalLight.intensity = 1.0;
+                    directionalLight.position.set(8, 2, 8);
                     break;
                     
                 case 'night':
-                    // 夜：暗い青色調
                     scene.background = new THREE.Color(0x191970);
-                    ambientLight.color.setHex(0x404080);
                     ambientLight.intensity = 0.4;
                     directionalLight.color.setHex(0x4169E1);
                     directionalLight.intensity = 0.6;
                     directionalLight.position.set(2, 5, 8);
-                    pointLight.color.setHex(0x6495ED);
                     pointLight.intensity = 1.2;
                     break;
-                    
-                case 'custom':
-                    // カスタム設定時は現在の値を保持
-                    break;
             }
-            
-            updateLightingControls();
         }
-
-        // ライティングコントロールの値を更新
-        function updateLightingControls() {
-            ambientIntensitySlider.value = ambientLight.intensity;
-            directionalIntensitySlider.value = directionalLight.intensity;
-            sunXSlider.value = directionalLight.position.x;
-            sunYSlider.value = directionalLight.position.y;
-            sunZSlider.value = directionalLight.position.z;
-            pointIntensitySlider.value = pointLight.intensity;
-            
-            updateLightingValues();
-        }
-
-        // ライティング値表示更新
-        function updateLightingValues() {
-            ambientIntensityValue.textContent = parseFloat(ambientIntensitySlider.value).toFixed(1);
-            directionalIntensityValue.textContent = parseFloat(directionalIntensitySlider.value).toFixed(1);
-            sunXValue.textContent = parseFloat(sunXSlider.value).toFixed(1);
-            sunYValue.textContent = parseFloat(sunYSlider.value).toFixed(1);
-            sunZValue.textContent = parseFloat(sunZSlider.value).toFixed(1);
-            pointIntensityValue.textContent = parseFloat(pointIntensitySlider.value).toFixed(1);
-        }
-
-        // ライティングをリアルタイム更新
-        function updateLightingFromControls() {
-            ambientLight.intensity = parseFloat(ambientIntensitySlider.value);
-            directionalLight.intensity = parseFloat(directionalIntensitySlider.value);
-            directionalLight.position.set(
-                parseFloat(sunXSlider.value),
-                parseFloat(sunYSlider.value),
-                parseFloat(sunZSlider.value)
-            );
-            pointLight.intensity = parseFloat(pointIntensitySlider.value);
-            
-            updateLightingValues();
-            lightingSelect.value = 'custom';
-        }
-
-        // ライティングリセット
-        function resetLighting() {
-            setLighting('noon');
-            lightingSelect.value = 'noon';
-        }
-
-        // GLBモデル読み込み（修正版）
+        
+        // GLBモデル読み込み
         async function loadGLBModel(arrayBuffer, fileName, clearSceneFlag = false, source = 'demo') {
             try {
-                console.log(`GLBモデル読み込み開始: ${fileName}, source: ${source}`);
+                console.log(`GLBモデル読み込み開始: ${fileName}`);
                 
                 if (clearSceneFlag) {
                     while(sceneGroup.children.length > 0) {
@@ -1180,39 +919,23 @@
                     sceneModels = [];
                     selectedModelIndex = -1;
                 }
-
+                
                 let model;
                 const isBackground = clearSceneFlag || sceneModels.length === 0;
-
+                
                 if (arrayBuffer && source !== 'demo') {
-                    console.log('GLTFLoaderでGLBファイルを解析中...');
-                    console.log('ArrayBuffer size:', arrayBuffer.byteLength);
-                    
-                    // GLTFLoaderが正しく読み込まれているか確認
                     if (typeof THREE.GLTFLoader === 'undefined') {
-                        console.error('GLTFLoader is not loaded!');
                         throw new Error('GLTFLoaderが読み込まれていません');
                     }
                     
                     const loader = new THREE.GLTFLoader();
                     
                     return new Promise((resolve, reject) => {
-                        // ArrayBufferの先頭をチェック（GLBファイルかどうか）
-                        const view = new DataView(arrayBuffer);
-                        const magic = view.getUint32(0, true);
-                        console.log('File magic number:', magic.toString(16));
-                        
-                        if (magic !== 0x46546C67) { // "glTF" in little endian
-                            console.warn('ファイルがGLB形式ではない可能性があります');
-                        }
-                        
                         loader.parse(arrayBuffer, '', (gltf) => {
                             try {
-                                console.log('GLTFparse成功:', gltf);
                                 model = gltf.scene;
                                 
                                 if (!model || model.children.length === 0) {
-                                    console.warn('GLTFファイルに3Dオブジェクトが含まれていません');
                                     throw new Error('有効な3Dモデルが見つかりません');
                                 }
                                 
@@ -1221,22 +944,15 @@
                                 const size = box.getSize(new THREE.Vector3()).length();
                                 const center = box.getCenter(new THREE.Vector3());
                                 
-                                console.log('Model size:', size);
-                                console.log('Model center:', center);
-                                
-                                // 適切なサイズに調整
-                                const targetSize = isBackground ? 10 : 2;
+                                const targetSize = isBackground ? 8 : 2;
                                 const scale = size > 0 ? targetSize / size : 1;
                                 model.scale.setScalar(scale);
                                 
-                                // 中心に配置
                                 model.position.x = -center.x * scale;
                                 model.position.y = -center.y * scale;
                                 model.position.z = -center.z * scale;
                                 
-                                if (isBackground) {
-                                    model.position.set(0, 0, 0);
-                                } else {
+                                if (!isBackground) {
                                     const radius = 3;
                                     const angle = Math.random() * Math.PI * 2;
                                     model.position.set(
@@ -1251,13 +967,10 @@
                                     if (child.isMesh) {
                                         child.castShadow = true;
                                         child.receiveShadow = true;
-                                        console.log('Mesh found:', child.name || 'unnamed');
                                     }
                                 });
                                 
-                                // sceneGroupに追加
                                 sceneGroup.add(model);
-                                console.log('モデルをシーンに追加しました');
                                 
                                 const modelData = {
                                     model: model,
@@ -1273,24 +986,20 @@
                                 selectedModelIndex = sceneModels.length - 1;
                                 updateSelectedModel();
                                 updateSceneModelsList();
-                                updateObjectSelector();
                                 showLoading(false);
-                                showLoadStatus(`✅ ${fileName} を正常に読み込みました（GLBファイル）`, 'success');
+                                showStatus(`✅ ${fileName} を正常に読み込みました`, 'success');
                                 
                                 resolve();
                             } catch (error) {
-                                console.error('GLTFparse後のエラー:', error);
                                 reject(error);
                             }
                         }, (error) => {
-                            console.error('GLTFparseエラー:', error);
                             reject(new Error('GLBファイルの解析に失敗しました: ' + error.message));
                         });
                     });
                 } else {
-                    console.log('デモ用立方体を作成');
-                    // デモ用のカラフルなボックスを作成
-                    const size = isBackground ? 8 : 1;
+                    // デモ用立方体
+                    const size = isBackground ? 6 : 1;
                     const geometry = new THREE.BoxGeometry(size, size, size);
                     const material = new THREE.MeshLambertMaterial({ 
                         color: new THREE.Color().setHSL(Math.random(), 0.7, 0.5),
@@ -1301,9 +1010,7 @@
                     model.castShadow = true;
                     model.receiveShadow = true;
                     
-                    if (isBackground) {
-                        model.position.set(0, 0, 0);
-                    } else {
+                    if (!isBackground) {
                         const radius = 3;
                         const angle = Math.random() * Math.PI * 2;
                         model.position.set(
@@ -1317,7 +1024,7 @@
                     
                     const modelData = {
                         model: model,
-                        name: fileName,
+                        name: fileName + ' (デモ)',
                         type: isBackground ? 'background' : 'object',
                         source: source,
                         originalPosition: model.position.clone(),
@@ -1329,30 +1036,145 @@
                     selectedModelIndex = sceneModels.length - 1;
                     updateSelectedModel();
                     updateSceneModelsList();
-                    updateObjectSelector();
                     showLoading(false);
-                    showLoadStatus(`✅ ${fileName} を読み込みました（デモ表示）`, 'success');
+                    showStatus(`✅ ${fileName} を読み込みました（デモ表示）`, 'success');
                 }
                 
             } catch (error) {
                 console.error('GLBモデル読み込みエラー:', error);
                 showLoading(false);
-                showLoadStatus('❌ モデル表示エラー: ' + error.message, 'error');
+                showStatus('❌ モデル表示エラー: ' + error.message, 'error');
             }
         }
-
+        
+        // カメラ位置更新
+        function updateCameraPosition() {
+            const x = cameraControls.distance * Math.sin(cameraControls.rotationY) * Math.cos(cameraControls.rotationX);
+            const y = cameraControls.distance * Math.sin(cameraControls.rotationX);
+            const z = cameraControls.distance * Math.cos(cameraControls.rotationY) * Math.cos(cameraControls.rotationX);
+            
+            camera.position.set(x, y, z);
+            camera.lookAt(0, 0, 0);
+        }
+        
+        // カメラコントロール
+        function addCameraControls() {
+            let isMouseDown = false;
+            let mouseX = 0, mouseY = 0;
+            
+            const viewer = document.getElementById('viewer');
+            
+            viewer.addEventListener('mousedown', (event) => {
+                if (event.button === 0) {
+                    isMouseDown = true;
+                    mouseX = event.clientX;
+                    mouseY = event.clientY;
+                }
+            });
+            
+            viewer.addEventListener('mousemove', (event) => {
+                if (!isMouseDown) return;
+                
+                const deltaX = event.clientX - mouseX;
+                const deltaY = event.clientY - mouseY;
+                
+                cameraControls.rotationY += deltaX * 0.01;
+                cameraControls.rotationX += deltaY * 0.01;
+                cameraControls.rotationX = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, cameraControls.rotationX));
+                
+                updateCameraPosition();
+                
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            });
+            
+            viewer.addEventListener('mouseup', () => {
+                isMouseDown = false;
+            });
+            
+            viewer.addEventListener('wheel', (event) => {
+                cameraControls.distance += event.deltaY * 0.01;
+                cameraControls.distance = Math.max(2, Math.min(20, cameraControls.distance));
+                updateCameraPosition();
+            });
+            
+            // タッチ対応
+            viewer.addEventListener('touchstart', (event) => {
+                if (event.touches.length === 1) {
+                    isMouseDown = true;
+                    mouseX = event.touches[0].clientX;
+                    mouseY = event.touches[0].clientY;
+                }
+            });
+            
+            viewer.addEventListener('touchmove', (event) => {
+                if (!isMouseDown || event.touches.length !== 1) return;
+                
+                const deltaX = event.touches[0].clientX - mouseX;
+                const deltaY = event.touches[0].clientY - mouseY;
+                
+                cameraControls.rotationY += deltaX * 0.01;
+                cameraControls.rotationX += deltaY * 0.01;
+                cameraControls.rotationX = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, cameraControls.rotationX));
+                
+                updateCameraPosition();
+                
+                mouseX = event.touches[0].clientX;
+                mouseY = event.touches[0].clientY;
+            });
+            
+            viewer.addEventListener('touchend', () => {
+                isMouseDown = false;
+            });
+        }
+        
+        // アニメーション
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            
+            if (autoRotate && sceneGroup) {
+                const speed = parseFloat(rotationSpeedSlider.value);
+                sceneGroup.rotation.y += speed;
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        // ウィンドウリサイズ
+        function onWindowResize() {
+            const viewer = document.getElementById('viewer');
+            camera.aspect = viewer.clientWidth / viewer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+        }
+        
+        // ビューアー表示
+        function showViewer(fileName) {
+            modelTitle.textContent = `🎨 ${fileName}`;
+            fileSection.style.display = 'none';
+            viewerSection.style.display = 'block';
+            
+            if (!scene) {
+                initThreeJS();
+            }
+        }
+        
+        // ローディング表示
+        function showLoading(show) {
+            loading.style.display = show ? 'block' : 'none';
+        }
+        
         // シーンクリア
         function clearScene() {
-            while(sceneGroup.children.length > 0) {
+            while(sceneGroup && sceneGroup.children.length > 0) {
                 sceneGroup.remove(sceneGroup.children[0]);
             }
             sceneModels = [];
             selectedModelIndex = -1;
             updateSceneModelsList();
             updateSelectedModel();
-            updateObjectSelector();
         }
-
+        
         // シーン内モデル一覧更新
         function updateSceneModelsList() {
             if (sceneModels.length === 0) {
@@ -1369,11 +1191,10 @@
                 modelDiv.style.background = selectedModelIndex === index ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)';
                 
                 const typeIcon = modelData.type === 'background' ? '🌄' : '🏠';
-                const typeText = modelData.type === 'background' ? '背景' : 'オブジェクト';
                 const sourceIcon = modelData.source === 'local' ? '💻' : (modelData.source === 'drive' ? '☁️' : '🎯');
                 
                 modelDiv.innerHTML = `
-                    <span>${typeIcon} ${sourceIcon} ${modelData.name} (${typeText})</span>
+                    <span>${typeIcon} ${sourceIcon} ${modelData.name}</span>
                     <div class="model-controls">
                         <button class="small-btn" onclick="selectModel(${index})">選択</button>
                         <button class="small-btn" onclick="removeModel(${index})">削除</button>
@@ -1383,52 +1204,16 @@
                 modelsList.appendChild(modelDiv);
             });
         }
-
-        // オブジェクト選択バー更新
-        function updateObjectSelector() {
-            if (sceneModels.length === 0) {
-                objectSelector.style.display = 'none';
-                return;
-            }
-            
-            objectSelector.style.display = 'block';
-            selectorGrid.innerHTML = '';
-            
-            sceneModels.forEach((modelData, index) => {
-                const selectorItem = document.createElement('div');
-                selectorItem.className = 'selector-item';
-                if (selectedModelIndex === index) {
-                    selectorItem.classList.add('selected');
-                }
-                
-                const typeIcon = modelData.type === 'background' ? '🌄' : '🏠';
-                const sourceIcon = modelData.source === 'local' ? '💻' : (modelData.source === 'drive' ? '☁️' : '🎯');
-                selectorItem.innerHTML = `
-                    <h4>${typeIcon} ${sourceIcon} ${modelData.name}</h4>
-                    <p>${modelData.type === 'background' ? '背景' : 'オブジェクト'}</p>
-                `;
-                
-                selectorItem.onclick = () => {
-                    selectedModelIndex = index;
-                    updateSelectedModel();
-                    updateSceneModelsList();
-                    updateObjectSelector();
-                };
-                
-                selectorGrid.appendChild(selectorItem);
-            });
-        }
-
+        
         // モデル選択
         function selectModel(index) {
             if (index >= 0 && index < sceneModels.length) {
                 selectedModelIndex = index;
                 updateSelectedModel();
                 updateSceneModelsList();
-                updateObjectSelector();
             }
         }
-
+        
         // モデル削除
         function removeModel(index) {
             if (index >= 0 && index < sceneModels.length) {
@@ -1441,11 +1226,10 @@
                 
                 updateSceneModelsList();
                 updateSelectedModel();
-                updateObjectSelector();
             }
         }
-
-        // 選択中モデルの表示更新
+        
+        // 選択中モデル更新
         function updateSelectedModel() {
             if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
                 const modelData = sceneModels[selectedModelIndex];
@@ -1466,8 +1250,8 @@
                 positionControls.style.display = 'none';
             }
         }
-
-        // 位置制御の値表示更新
+        
+        // 位置制御値更新
         function updatePositionValues() {
             posXValue.textContent = parseFloat(posXSlider.value).toFixed(1);
             posYValue.textContent = parseFloat(posYSlider.value).toFixed(1);
@@ -1475,8 +1259,8 @@
             rotYValue.textContent = (parseFloat(rotYSlider.value) * 180 / Math.PI).toFixed(0) + '°';
             scaleValue.textContent = parseFloat(scaleSlider.value).toFixed(1);
         }
-
-        // 選択中モデルの位置更新
+        
+        // 選択中モデル位置更新
         function updateSelectedModelPosition() {
             if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
                 const model = sceneModels[selectedModelIndex].model;
@@ -1491,9 +1275,37 @@
                 updatePositionValues();
             }
         }
-
-        // 位置リセット機能
-        function resetPosition(axis) {
+        
+        // カメラリセット
+        function resetCamera() {
+            cameraControls.rotationX = 0.3;
+            cameraControls.rotationY = 0;
+            cameraControls.distance = 10;
+            updateCameraPosition();
+            
+            if (sceneGroup) {
+                sceneGroup.rotation.set(0, 0, 0);
+            }
+        }
+        
+        // 自動回転切り替え
+        function toggleAutoRotation() {
+            autoRotate = !autoRotate;
+            toggleRotationBtn.textContent = autoRotate ? '🔄 自動回転 ON' : '⏸️ 自動回転 OFF';
+        }
+        
+        // ライティング変更
+        function changeLighting() {
+            const selectedLighting = lightingSelect.value;
+            setLighting(selectedLighting);
+        }
+        
+        // グローバル関数（モデル操作用）
+        window.selectModel = selectModel;
+        window.removeModel = removeModel;
+        
+        // 位置リセット関数
+        window.resetPosition = function(axis) {
             if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
                 const model = sceneModels[selectedModelIndex].model;
                 switch(axis) {
@@ -1512,36 +1324,32 @@
                 }
                 updatePositionValues();
             }
-        }
-
-        function resetRotation() {
+        };
+        
+        window.resetRotation = function() {
             if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
                 const model = sceneModels[selectedModelIndex].model;
                 model.rotation.y = 0;
                 rotYSlider.value = 0;
                 updatePositionValues();
             }
-        }
-
-        function resetScale() {
+        };
+        
+        window.resetScale = function() {
             if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
                 const model = sceneModels[selectedModelIndex].model;
                 model.scale.set(1, 1, 1);
                 scaleSlider.value = 1;
                 updatePositionValues();
             }
-        }
-
-        // 便利機能
-        function duplicateModel() {
+        };
+        
+        window.duplicateModel = function() {
             if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
                 const originalData = sceneModels[selectedModelIndex];
                 const original = originalData.model;
                 
-                const clonedGeometry = original.geometry.clone();
-                const clonedMaterial = original.material.clone();
-                const clonedModel = new THREE.Mesh(clonedGeometry, clonedMaterial);
-                
+                const clonedModel = original.clone();
                 clonedModel.position.copy(original.position);
                 clonedModel.position.x += 2;
                 clonedModel.rotation.copy(original.rotation);
@@ -1563,12 +1371,11 @@
                 selectedModelIndex = sceneModels.length - 1;
                 updateSelectedModel();
                 updateSceneModelsList();
-                updateObjectSelector();
-                showLoadStatus('✅ モデルを複製しました', 'success');
+                showStatus('✅ モデルを複製しました', 'success');
             }
-        }
-
-        function centerModel() {
+        };
+        
+        window.centerModel = function() {
             if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
                 const model = sceneModels[selectedModelIndex].model;
                 model.position.set(0, model.position.y, 0);
@@ -1576,221 +1383,4 @@
                 posZSlider.value = 0;
                 updatePositionValues();
             }
-        }
-
-        function snapToGround() {
-            if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
-                const model = sceneModels[selectedModelIndex].model;
-                model.position.y = 0;
-                posYSlider.value = 0;
-                updatePositionValues();
-            }
-        }
-
-        // カメラ位置更新
-        function updateCameraPosition() {
-            const x = cameraControls.distance * Math.sin(cameraControls.rotationY) * Math.cos(cameraControls.rotationX);
-            const y = cameraControls.distance * Math.sin(cameraControls.rotationX);
-            const z = cameraControls.distance * Math.cos(cameraControls.rotationY) * Math.cos(cameraControls.rotationX);
-            
-            camera.position.set(x, y, z);
-            camera.lookAt(0, 0, 0);
-        }
-
-        // カメラコントロール（マウス操作）
-        function addCameraControls() {
-            let isMouseDown = false;
-            let mouseX = 0, mouseY = 0;
-
-            const viewer = document.getElementById('viewer');
-
-            viewer.addEventListener('mousedown', (event) => {
-                if (event.button === 0) { // 左クリック
-                    isMouseDown = true;
-                    mouseX = event.clientX;
-                    mouseY = event.clientY;
-                }
-            });
-
-            viewer.addEventListener('mousemove', (event) => {
-                if (!isMouseDown) return;
-                
-                const deltaX = event.clientX - mouseX;
-                const deltaY = event.clientY - mouseY;
-                
-                // カメラの回転を更新
-                cameraControls.rotationY += deltaX * 0.01;
-                cameraControls.rotationX += deltaY * 0.01;
-                
-                // X軸回転を制限（上下の制限）
-                cameraControls.rotationX = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, cameraControls.rotationX));
-                
-                updateCameraPosition();
-                
-                mouseX = event.clientX;
-                mouseY = event.clientY;
-            });
-
-            viewer.addEventListener('mouseup', () => {
-                isMouseDown = false;
-            });
-
-            viewer.addEventListener('wheel', (event) => {
-                // ホイールでズーム
-                cameraControls.distance += event.deltaY * 0.01;
-                cameraControls.distance = Math.max(2, Math.min(20, cameraControls.distance));
-                updateCameraPosition();
-            });
-
-            // タッチデバイス対応
-            viewer.addEventListener('touchstart', (event) => {
-                if (event.touches.length === 1) {
-                    isMouseDown = true;
-                    mouseX = event.touches[0].clientX;
-                    mouseY = event.touches[0].clientY;
-                }
-            });
-
-            viewer.addEventListener('touchmove', (event) => {
-                if (!isMouseDown || event.touches.length !== 1) return;
-                
-                const deltaX = event.touches[0].clientX - mouseX;
-                const deltaY = event.touches[0].clientY - mouseY;
-                
-                cameraControls.rotationY += deltaX * 0.01;
-                cameraControls.rotationX += deltaY * 0.01;
-                cameraControls.rotationX = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, cameraControls.rotationX));
-                
-                updateCameraPosition();
-                
-                mouseX = event.touches[0].clientX;
-                mouseY = event.touches[0].clientY;
-            });
-
-            viewer.addEventListener('touchend', () => {
-                isMouseDown = false;
-            });
-        }
-
-        // アニメーション（改良版）
-        function animate() {
-            animationId = requestAnimationFrame(animate);
-            
-            // シーン全体の自動回転
-            if (autoRotate && sceneGroup) {
-                const speed = parseFloat(rotationSpeedSlider.value);
-                sceneGroup.rotation.y += speed;
-            }
-            
-            renderer.render(scene, camera);
-        }
-
-        // ウィンドウリサイズ
-        function onWindowResize() {
-            const viewer = document.getElementById('viewer');
-            camera.aspect = viewer.clientWidth / viewer.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(viewer.clientWidth, viewer.clientHeight);
-        }
-
-        // ユーティリティ関数
-        function showLoadStatus(message, type) {
-            loadStatus.textContent = message;
-            loadStatus.className = `status ${type}`;
-        }
-
-        function showViewer(fileName) {
-            modelTitle.textContent = `🎨 ${fileName}`;
-            fileSection.style.display = 'none';
-            viewerSection.style.display = 'block';
-            
-            if (!scene) {
-                initThreeJS();
-            }
-        }
-
-        function showLoading(show) {
-            loading.style.display = show ? 'block' : 'none';
-        }
-
-        function resetCamera() {
-            cameraControls.rotationX = 0;
-            cameraControls.rotationY = 0;
-            cameraControls.distance = 5;
-            updateCameraPosition();
-            
-            // シーンの回転もリセット
-            if (sceneGroup) {
-                sceneGroup.rotation.set(0, 0, 0);
-            }
-        }
-
-        function toggleAutoRotation() {
-            autoRotate = !autoRotate;
-            toggleRotationBtn.textContent = autoRotate ? 'シーン回転 ON' : 'シーン回転 OFF';
-        }
-
-        // ライティング変更
-        function changeLighting() {
-            const selectedLighting = lightingSelect.value;
-            setLighting(selectedLighting);
-            
-            // カスタムモードの場合はコントロールパネル表示
-            const lightingControlsPanel = document.getElementById('lighting-controls');
-            if (selectedLighting === 'custom') {
-                lightingControlsPanel.style.display = 'block';
-            } else {
-                lightingControlsPanel.style.display = 'none';
-            }
-        }
-
-        // イベントリスナー
-        backToFiles.addEventListener('click', () => {
-            viewerSection.style.display = 'none';
-            fileSection.style.display = 'block';
-        });
-        resetCameraBtn.addEventListener('click', resetCamera);
-        toggleRotationBtn.addEventListener('click', toggleAutoRotation);
-        lightingSelect.addEventListener('change', changeLighting);
-        
-        // ライティング調整イベント
-        ambientIntensitySlider.addEventListener('input', updateLightingFromControls);
-        directionalIntensitySlider.addEventListener('input', updateLightingFromControls);
-        sunXSlider.addEventListener('input', updateLightingFromControls);
-        sunYSlider.addEventListener('input', updateLightingFromControls);
-        sunZSlider.addEventListener('input', updateLightingFromControls);
-        pointIntensitySlider.addEventListener('input', updateLightingFromControls);
-        
-        // ローカルファイル読み込みイベント
-        loadLocalBackgroundBtn.addEventListener('click', loadLocalBackground);
-        loadLocalObjectBtn.addEventListener('click', loadLocalObject);
-        localFileInput.addEventListener('change', handleLocalFile);
-        addManualFileBtn.addEventListener('click', addManualFile);
-        
-        prevFileBtn.addEventListener('click', () => navigateFiles('prev'));
-        nextFileBtn.addEventListener('click', () => navigateFiles('next'));
-        loadSingleBtn.addEventListener('click', loadSingleModel);
-        addToSceneBtn.addEventListener('click', addModelToScene);
-        clearSceneBtn.addEventListener('click', clearScene);
-        
-        posXSlider.addEventListener('input', updateSelectedModelPosition);
-        posYSlider.addEventListener('input', updateSelectedModelPosition);
-        posZSlider.addEventListener('input', updateSelectedModelPosition);
-        rotYSlider.addEventListener('input', updateSelectedModelPosition);
-        scaleSlider.addEventListener('input', updateSelectedModelPosition);
-        
-        // グローバル関数
-        window.selectModel = selectModel;
-        window.removeModel = removeModel;
-        window.resetPosition = resetPosition;
-        window.resetRotation = resetRotation;
-        window.resetScale = resetScale;
-        window.duplicateModel = duplicateModel;
-        window.centerModel = centerModel;
-        window.snapToGround = snapToGround;
-        window.resetLighting = resetLighting;
-        window.addManualFile = addManualFile;
-        window.extractFileIdFromUrl = extractFileIdFromUrl;
-    </script>
-</body>
-</html>
+        };
