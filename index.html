@@ -213,7 +213,7 @@
         <div class="auth-section">
             <h2>📁 Google Drive認証</h2>
             <p>Google Driveにアクセスして3Dモデルを読み込みます</p>
-            <button id="auth-btn" class="btn">Google Driveに接続</button>
+            <button id="auth-btn" class="btn" disabled>Google Driveに接続</button>
             <button id="signout-btn" class="btn" style="display:none;">サインアウト</button>
             <div id="auth-status" class="status" style="display:none;"></div>
         </div>
@@ -317,18 +317,27 @@
 
         // Google Identity Services初期化
         function initializeGsi() {
-            if (typeof google === 'undefined') {
+            console.log('Checking for Google Identity Services...');
+            
+            if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
                 console.log('Waiting for Google Identity Services...');
                 setTimeout(initializeGsi, 500);
                 return;
             }
 
             try {
+                console.log('Initializing token client...');
                 tokenClient = google.accounts.oauth2.initTokenClient({
                     client_id: CLIENT_ID,
                     scope: SCOPES,
                     callback: (tokenResponse) => {
                         console.log('Token received:', tokenResponse);
+                        if (tokenResponse.error) {
+                            console.error('Token error:', tokenResponse.error);
+                            showStatus('❌ 認証エラー: ' + tokenResponse.error, 'error');
+                            return;
+                        }
+                        
                         accessToken = tokenResponse.access_token;
                         if (tokenResponse.access_token) {
                             showStatus('✅ Google Driveに接続しました', 'success');
@@ -338,37 +347,56 @@
                         }
                     },
                 });
+                
                 gsiLoaded = true;
-                console.log('GSI loaded');
+                console.log('GSI token client initialized successfully');
                 maybeEnableButtons();
             } catch (error) {
                 console.error('Error loading GSI:', error);
                 showStatus('❌ GSI初期化エラー: ' + error.message, 'error');
+                // リトライ
+                setTimeout(initializeGsi, 1000);
             }
         }
 
         function maybeEnableButtons() {
-            if (gapiLoaded && gsiLoaded) {
+            console.log('Checking if both APIs are loaded:', {gapiLoaded, gsiLoaded, tokenClient: !!tokenClient});
+            if (gapiLoaded && gsiLoaded && tokenClient) {
                 authBtn.disabled = false;
                 showStatus('📝 Google Driveに接続してください', '');
+                console.log('All APIs loaded, button enabled');
+            } else {
+                showStatus('🔄 Google APIを読み込み中...', '');
             }
         }
 
         // サインイン
         function signIn() {
+            console.log('Sign in attempted, tokenClient:', !!tokenClient);
+            
             if (!tokenClient) {
                 showStatus('❌ 認証クライアントが初期化されていません', 'error');
+                console.error('Token client not initialized');
+                
+                // 再初期化を試行
+                if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+                    console.log('Attempting to reinitialize token client...');
+                    initializeGsi();
+                }
                 return;
             }
 
             try {
+                console.log('Requesting access token...');
+                showStatus('🔄 認証中...', '');
+                
                 // トークンが既にある場合は削除
                 if (accessToken) {
                     google.accounts.oauth2.revoke(accessToken);
                 }
                 
                 // 新しいトークンを要求
-                tokenClient.requestAccessToken();
+                tokenClient.requestAccessToken({prompt: 'consent'});
             } catch (error) {
                 console.error('Sign in error:', error);
                 showStatus('❌ サインインエラー: ' + error.message, 'error');
@@ -720,16 +748,25 @@
         resetCameraBtn.addEventListener('click', resetCamera);
         toggleRotationBtn.addEventListener('click', toggleAutoRotation);
 
-        // 初期化を遅延実行
-        function delayedInit() {
-            // ページ読み込み完了後に少し待ってから初期化
+        // 初期化を並行実行
+        function startInitialization() {
+            console.log('Starting initialization...');
+            showStatus('🔄 Google APIを読み込み中...', '');
+            
+            // 両方のAPIを並行して初期化
+            initializeGapi();
+            
+            // GSIの初期化は少し遅らせる
             setTimeout(() => {
-                initializeGapi();
+                initializeGsi();
             }, 1000);
         }
 
         // 初期化
-        window.addEventListener('load', delayedInit);
+        window.addEventListener('load', () => {
+            console.log('Page loaded, starting initialization...');
+            setTimeout(startInitialization, 1500);
+        });
     </script>
 </body>
 </html>
