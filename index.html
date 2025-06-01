@@ -423,6 +423,17 @@
                         <button id="load-local-object" class="btn">📱 ローカルオブジェクト読み込み</button>
                     </div>
                 </div>
+                
+                <!-- 手動ファイル追加 -->
+                <div class="local-file-section">
+                    <h4>🔗 Google Drive共有リンク追加</h4>
+                    <div class="local-file-actions">
+                        <button id="add-manual-file" class="btn">➕ 共有リンクから追加</button>
+                    </div>
+                    <p style="font-size: 0.8rem; margin-top: 5px; opacity: 0.8;">
+                        Google Driveファイルの共有リンクを使用して手動で追加
+                    </p>
+                </div>
             </div>
             
             <div id="scene-models" class="scene-models" style="display:none;">
@@ -643,6 +654,7 @@
         const localFileInput = document.getElementById('local-file-input');
         const loadLocalBackgroundBtn = document.getElementById('load-local-background');
         const loadLocalObjectBtn = document.getElementById('load-local-object');
+        const addManualFileBtn = document.getElementById('add-manual-file');
         let isLoadingAsBackground = false;
 
         // ライティング管理
@@ -656,51 +668,29 @@
             loadPublicFiles();
         });
 
-        // Google Drive APIを使用してフォルダ内ファイル一覧を取得
+        // Google Drive RSS/XML フィードを使用してファイル一覧を取得
         async function loadPublicFiles() {
             try {
                 showLoadStatus('🔄 Google Driveフォルダを検索中...', '');
                 
-                // Method 1: Google Drive API v3を使用（APIキー不要の公開アクセス）
-                const apiUrl = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents+and+(name+contains+'.glb'+or+name+contains+'.GLB')+and+trashed=false&fields=files(id,name,size,mimeType)&orderBy=name`;
-                
+                // Method 1: Google Drive RSS フィード（APIキー不要）
                 try {
-                    console.log('Google Drive API URL:', apiUrl);
-                    const response = await fetch(apiUrl);
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log('API Response:', data);
-                        
-                        if (data.files && data.files.length > 0) {
-                            // APIで取得したファイル情報を処理
-                            const processedFiles = data.files.map(file => ({
-                                id: file.id,
-                                name: file.name,
-                                size: file.size || '不明',
-                                webContentLink: `https://drive.google.com/uc?export=download&id=${file.id}`,
-                                webViewLink: `https://drive.google.com/file/d/${file.id}/view`,
-                                isReal: true,
-                                source: 'api'
-                            }));
-                            
-                            console.log(`${processedFiles.length}個のGLBファイルを検出:`, processedFiles);
-                            displayFiles(processedFiles);
-                            showLoadStatus(`✅ ${processedFiles.length}個のGLBファイルを検出！`, 'success');
-                            
-                            setTimeout(() => {
-                                loadingSection.style.display = 'none';
-                                fileSection.style.display = 'block';
-                            }, 1000);
-                            return;
-                        }
-                    }
-                } catch (apiError) {
-                    console.log('Google Drive API失敗:', apiError);
+                    await loadFromRSSFeed();
+                    return;
+                } catch (rssError) {
+                    console.log('RSS フィード失敗:', rssError);
                 }
                 
-                // Method 2: 個別ファイル設定を使用
-                showLoadStatus('🔄 個別ファイル設定を確認中...', '');
+                // Method 2: 公開フォルダのHTMLスクレイピング（APIキー不要）
+                try {
+                    await loadFromPublicFolderHTML();
+                    return;
+                } catch (htmlError) {
+                    console.log('HTML スクレイピング失敗:', htmlError);
+                }
+                
+                // Method 3: 既知のファイルIDリストを使用
+                showLoadStatus('🔄 既知ファイルリストから読み込み中...', '');
                 await loadIndividualFiles();
                 
             } catch (error) {
@@ -710,6 +700,144 @@
                     loadDemoFiles();
                 }, 2000);
             }
+        }
+
+        // Google Drive RSSフィードから読み込み（APIキー不要）
+        async function loadFromRSSFeed() {
+            const rssUrl = `https://drive.google.com/feeds/default/private/full/${FOLDER_ID}?alt=rss`;
+            console.log('RSS URL:', rssUrl);
+            
+            try {
+                const response = await fetch(rssUrl, {
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+                
+                if (response.ok) {
+                    const rssText = await response.text();
+                    console.log('RSS Response length:', rssText.length);
+                    
+                    // RSSからファイル情報を抽出
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(rssText, "text/xml");
+                    const items = xmlDoc.getElementsByTagName("item");
+                    
+                    const files = [];
+                    for (let i = 0; i < items.length; i++) {
+                        const item = items[i];
+                        const title = item.getElementsByTagName("title")[0]?.textContent;
+                        const link = item.getElementsByTagName("link")[0]?.textContent;
+                        
+                        if (title && link && title.toLowerCase().includes('.glb')) {
+                            const fileId = extractFileIdFromUrl(link);
+                            if (fileId) {
+                                files.push({
+                                    id: fileId,
+                                    name: title,
+                                    size: '不明',
+                                    webContentLink: `https://drive.google.com/uc?export=download&id=${fileId}`,
+                                    isReal: true,
+                                    source: 'rss'
+                                });
+                            }
+                        }
+                    }
+                    
+                    if (files.length > 0) {
+                        displayFiles(files);
+                        showLoadStatus(`✅ RSS経由で${files.length}個のGLBファイルを検出！`, 'success');
+                        setTimeout(() => {
+                            loadingSection.style.display = 'none';
+                            fileSection.style.display = 'block';
+                        }, 1000);
+                        return;
+                    }
+                }
+                
+                throw new Error('RSS フィードからファイルを取得できませんでした');
+                
+            } catch (error) {
+                console.error('RSS読み込みエラー:', error);
+                throw error;
+            }
+        }
+
+        // 公開フォルダのHTMLから読み込み（APIキー不要）
+        async function loadFromPublicFolderHTML() {
+            const folderUrl = `https://drive.google.com/drive/folders/${FOLDER_ID}`;
+            console.log('Folder URL:', folderUrl);
+            
+            try {
+                // CORSプロキシを使用してHTMLを取得
+                const proxyUrls = [
+                    `https://api.allorigins.win/get?url=${encodeURIComponent(folderUrl)}`,
+                    `https://corsproxy.io/?${encodeURIComponent(folderUrl)}`,
+                    `https://cors-anywhere.herokuapp.com/${folderUrl}`
+                ];
+                
+                for (const proxyUrl of proxyUrls) {
+                    try {
+                        const response = await fetch(proxyUrl);
+                        if (response.ok) {
+                            const data = await response.json();
+                            const html = data.contents || data;
+                            
+                            // HTMLからファイル情報を抽出
+                            const files = extractFilesFromHTML(html);
+                            if (files.length > 0) {
+                                displayFiles(files);
+                                showLoadStatus(`✅ HTML解析で${files.length}個のGLBファイルを検出！`, 'success');
+                                setTimeout(() => {
+                                    loadingSection.style.display = 'none';
+                                    fileSection.style.display = 'block';
+                                }, 1000);
+                                return;
+                            }
+                        }
+                    } catch (proxyError) {
+                        console.log(`プロキシ ${proxyUrl} 失敗:`, proxyError);
+                        continue;
+                    }
+                }
+                
+                throw new Error('HTML解析でファイルを取得できませんでした');
+                
+            } catch (error) {
+                console.error('HTML読み込みエラー:', error);
+                throw error;
+            }
+        }
+
+        // HTMLからファイル情報を抽出
+        function extractFilesFromHTML(html) {
+            const files = [];
+            
+            // Google DriveのHTML構造からファイル情報を抽出
+            // データ属性やJSONからファイル情報を探す
+            const jsonMatches = html.match(/\["([^"]*\.glb[^"]*)",.*?"([a-zA-Z0-9-_]{25,})"/gi);
+            
+            if (jsonMatches) {
+                jsonMatches.forEach(match => {
+                    const nameMatch = match.match(/\["([^"]*\.glb[^"]*)"/);
+                    const idMatch = match.match(/"([a-zA-Z0-9-_]{25,})"/);
+                    
+                    if (nameMatch && idMatch) {
+                        const fileName = nameMatch[1];
+                        const fileId = idMatch[1];
+                        
+                        files.push({
+                            id: fileId,
+                            name: fileName,
+                            size: '不明',
+                            webContentLink: `https://drive.google.com/uc?export=download&id=${fileId}`,
+                            isReal: true,
+                            source: 'html'
+                        });
+                    }
+                });
+            }
+            
+            return files;
         }
 
         // 個別ファイル設定を使用した読み込み
@@ -1797,6 +1925,7 @@
         loadLocalBackgroundBtn.addEventListener('click', loadLocalBackground);
         loadLocalObjectBtn.addEventListener('click', loadLocalObject);
         localFileInput.addEventListener('change', handleLocalFile);
+        addManualFileBtn.addEventListener('click', addManualFile);
         
         prevFileBtn.addEventListener('click', () => navigateFiles('prev'));
         nextFileBtn.addEventListener('click', () => navigateFiles('next'));
@@ -1820,6 +1949,8 @@
         window.centerModel = centerModel;
         window.snapToGround = snapToGround;
         window.resetLighting = resetLighting;
+        window.addManualFile = addManualFile;
+        window.extractFileIdFromUrl = extractFileIdFromUrl;
     </script>
 </body>
 </html>
