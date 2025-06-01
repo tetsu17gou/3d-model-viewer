@@ -546,19 +546,31 @@
     <script>
         // 設定：指定フォルダのID
         const FOLDER_ID = '1U0aIZZRE6tXqbosBQL4SHT0OKwQiY14c';
-        const API_KEY = 'AIzaSyC5YourRealAPIKeyHere'; // 実際のAPIキーが必要
         
-        // 既知のファイル情報（フォルダ内の実際のファイル）
-        const KNOWN_FILES = [
+        // 個別ファイルの設定（フォルダ内の各GLBファイル）
+        const INDIVIDUAL_FILES = [
             {
-                id: '1U0aIZZRE6tXqbosBQL4SHT0OKwQiY14c', // 実際のファイルIDに置き換え
-                name: 'serene_retreat.glb',
-                size: '5242880',
-                webContentLink: `https://drive.google.com/uc?export=download&id=1U0aIZZRE6tXqbosBQL4SHT0OKwQiY14c`,
-                webViewLink: `https://drive.google.com/file/d/1U0aIZZRE6tXqbosBQL4SHT0OKwQiY14c/view`,
+                id: '1ABC123_file1_id',  // 実際のファイルID1
+                name: 'model1.glb',
+                size: '2048000',
+                webContentLink: `https://drive.google.com/uc?export=download&id=1ABC123_file1_id`,
+                isReal: true
+            },
+            {
+                id: '1DEF456_file2_id',  // 実際のファイルID2
+                name: 'model2.glb',
+                size: '1536000',
+                webContentLink: `https://drive.google.com/uc?export=download&id=1DEF456_file2_id`,
+                isReal: true
+            },
+            {
+                id: '1GHI789_file3_id',  // 実際のファイルID3
+                name: 'model3.glb',
+                size: '3072000',
+                webContentLink: `https://drive.google.com/uc?export=download&id=1GHI789_file3_id`,
                 isReal: true
             }
-            // 他のファイルもここに追加
+            // 他のファイルもここに個別に追加
         ];
         
         // ファイル管理
@@ -644,59 +656,52 @@
             loadPublicFiles();
         });
 
-        // 公開フォルダからファイル一覧を取得（修正版）
+        // Google Drive APIを使用してフォルダ内ファイル一覧を取得
         async function loadPublicFiles() {
             try {
-                showLoadStatus('🔄 Google Driveからファイルを取得中...', '');
+                showLoadStatus('🔄 Google Driveフォルダを検索中...', '');
                 
-                // まず既知のファイルを試行
-                const availableFiles = [];
+                // Method 1: Google Drive API v3を使用（APIキー不要の公開アクセス）
+                const apiUrl = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents+and+(name+contains+'.glb'+or+name+contains+'.GLB')+and+trashed=false&fields=files(id,name,size,mimeType)&orderBy=name`;
                 
-                for (const file of KNOWN_FILES) {
-                    try {
-                        // ファイルの存在確認
-                        const response = await fetch(file.webContentLink, { 
-                            method: 'HEAD',
-                            mode: 'no-cors'
-                        });
-                        availableFiles.push(file);
-                        console.log(`ファイル ${file.name} が利用可能です`);
-                    } catch (error) {
-                        console.log(`ファイル ${file.name} にアクセスできません:`, error);
+                try {
+                    console.log('Google Drive API URL:', apiUrl);
+                    const response = await fetch(apiUrl);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('API Response:', data);
+                        
+                        if (data.files && data.files.length > 0) {
+                            // APIで取得したファイル情報を処理
+                            const processedFiles = data.files.map(file => ({
+                                id: file.id,
+                                name: file.name,
+                                size: file.size || '不明',
+                                webContentLink: `https://drive.google.com/uc?export=download&id=${file.id}`,
+                                webViewLink: `https://drive.google.com/file/d/${file.id}/view`,
+                                isReal: true,
+                                source: 'api'
+                            }));
+                            
+                            console.log(`${processedFiles.length}個のGLBファイルを検出:`, processedFiles);
+                            displayFiles(processedFiles);
+                            showLoadStatus(`✅ ${processedFiles.length}個のGLBファイルを検出！`, 'success');
+                            
+                            setTimeout(() => {
+                                loadingSection.style.display = 'none';
+                                fileSection.style.display = 'block';
+                            }, 1000);
+                            return;
+                        }
                     }
+                } catch (apiError) {
+                    console.log('Google Drive API失敗:', apiError);
                 }
                 
-                if (availableFiles.length > 0) {
-                    displayFiles(availableFiles);
-                    showLoadStatus(`✅ ${availableFiles.length}個のGoogle Driveファイルを検出！`, 'success');
-                    setTimeout(() => {
-                        loadingSection.style.display = 'none';
-                        fileSection.style.display = 'block';
-                    }, 1000);
-                    return;
-                }
-                
-                // フォールバック: 手動でファイルIDを指定
-                showLoadStatus('⚠️ 自動検出に失敗しました。手動でファイルを追加してください。', 'error');
-                
-                // 代替方法: ファイルを手動で追加
-                const manualFiles = [
-                    {
-                        id: 'manual_entry_1',
-                        name: 'serene_retreat_0531233228_texture.glb',
-                        size: '5000000',
-                        webContentLink: `https://drive.google.com/uc?export=download&id=実際のファイルIDを入力`,
-                        isReal: false,
-                        note: '手動設定が必要'
-                    }
-                ];
-                
-                displayFiles(manualFiles);
-                showLoadStatus('📝 手動設定ファイルを表示中。実際のファイルIDを設定してください。', '');
-                setTimeout(() => {
-                    loadingSection.style.display = 'none';
-                    fileSection.style.display = 'block';
-                }, 2000);
+                // Method 2: 個別ファイル設定を使用
+                showLoadStatus('🔄 個別ファイル設定を確認中...', '');
+                await loadIndividualFiles();
                 
             } catch (error) {
                 console.error('ファイル読み込みエラー:', error);
@@ -707,28 +712,116 @@
             }
         }
 
-        // Google Drive共有リンクから直接読み込み
-        async function loadFromShareLink(shareUrl) {
-            try {
-                // 共有リンクからファイルIDを抽出
-                const fileIdMatch = shareUrl.match(/\/file\/d\/([a-zA-Z0-9-_]+)/);
-                if (!fileIdMatch) {
-                    throw new Error('無効な共有リンクです');
+        // 個別ファイル設定を使用した読み込み
+        async function loadIndividualFiles() {
+            const availableFiles = [];
+            
+            showLoadStatus('🔄 各ファイルの存在確認中...', '');
+            
+            for (let i = 0; i < INDIVIDUAL_FILES.length; i++) {
+                const file = INDIVIDUAL_FILES[i];
+                try {
+                    showLoadStatus(`🔄 ファイル ${i + 1}/${INDIVIDUAL_FILES.length} を確認中: ${file.name}`, '');
+                    
+                    // ファイルの存在確認（HEADリクエスト）
+                    const response = await fetch(file.webContentLink, { 
+                        method: 'HEAD',
+                        mode: 'no-cors'
+                    });
+                    
+                    availableFiles.push({
+                        ...file,
+                        source: 'individual'
+                    });
+                    console.log(`✅ ファイル ${file.name} が利用可能です`);
+                    
+                } catch (error) {
+                    console.log(`❌ ファイル ${file.name} にアクセスできません:`, error);
                 }
-                
-                const fileId = fileIdMatch[1];
-                const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-                
-                const response = await fetch(downloadUrl);
-                if (!response.ok) {
-                    throw new Error('ファイルのダウンロードに失敗しました');
-                }
-                
-                return await response.arrayBuffer();
-            } catch (error) {
-                console.error('共有リンク読み込みエラー:', error);
-                throw error;
             }
+            
+            if (availableFiles.length > 0) {
+                displayFiles(availableFiles);
+                showLoadStatus(`✅ ${availableFiles.length}個のGLBファイルを検出！`, 'success');
+                setTimeout(() => {
+                    loadingSection.style.display = 'none';
+                    fileSection.style.display = 'block';
+                }, 1000);
+            } else {
+                showLoadStatus('⚠️ 利用可能なファイルが見つかりませんでした。ファイルID設定を確認してください。', 'error');
+                
+                // フォールバック: 設定例を表示
+                const exampleFiles = [
+                    {
+                        id: 'example_id_1',
+                        name: 'ファイル1.glb',
+                        size: '個別設定が必要',
+                        webContentLink: 'https://drive.google.com/uc?export=download&id=example_id_1',
+                        isReal: false,
+                        note: '実際のファイルIDを設定してください'
+                    },
+                    {
+                        id: 'example_id_2', 
+                        name: 'ファイル2.glb',
+                        size: '個別設定が必要',
+                        webContentLink: 'https://drive.google.com/uc?export=download&id=example_id_2',
+                        isReal: false,
+                        note: '実際のファイルIDを設定してください'
+                    }
+                ];
+                
+                displayFiles(exampleFiles);
+                showLoadStatus('📝 設定例を表示中。実際のファイルIDを INDIVIDUAL_FILES に設定してください。', '');
+                setTimeout(() => {
+                    loadingSection.style.display = 'none';
+                    fileSection.style.display = 'block';
+                }, 2000);
+            }
+        }
+
+        // ファイルIDを自動抽出するヘルパー関数
+        function extractFileIdFromUrl(shareUrl) {
+            // Google Driveの共有URLからファイルIDを抽出
+            const patterns = [
+                /\/file\/d\/([a-zA-Z0-9-_]+)/,  // /file/d/ID/view
+                /id=([a-zA-Z0-9-_]+)/,          // ?id=ID
+                /([a-zA-Z0-9-_]{25,})/          // 長い英数字の文字列
+            ];
+            
+            for (const pattern of patterns) {
+                const match = shareUrl.match(pattern);
+                if (match) {
+                    return match[1];
+                }
+            }
+            return null;
+        }
+
+        // 手動でファイルを追加する関数（デバッグ用）
+        function addManualFile() {
+            const shareUrl = prompt('Google Driveの共有リンクを入力してください:');
+            if (!shareUrl) return;
+            
+            const fileId = extractFileIdFromUrl(shareUrl);
+            if (!fileId) {
+                alert('有効な共有リンクではありません');
+                return;
+            }
+            
+            const fileName = prompt('ファイル名を入力してください（例: model.glb）:') || 'manual_file.glb';
+            
+            const manualFile = {
+                id: fileId,
+                name: fileName,
+                size: '手動追加',
+                webContentLink: `https://drive.google.com/uc?export=download&id=${fileId}`,
+                isReal: true,
+                source: 'manual'
+            };
+            
+            currentFiles.push(manualFile);
+            updateFileDisplay();
+            console.log('手動ファイル追加:', manualFile);
         }
 
         // デモファイル読み込み（フォールバック）
