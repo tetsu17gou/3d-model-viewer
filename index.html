@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Model Viewer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://apis.google.com/js/api.js" defer></script>
+    <script src="https://accounts.google.com/gsi/client" defer></script>
     <style>
         * {
             margin: 0;
@@ -250,18 +251,19 @@
     <script>
         // Google Drive API設定
         const CLIENT_ID = '288299718991-9hbo1od9mevrqoek6bmufdpf8l3aaabs.apps.googleusercontent.com'; // ここに実際のClient IDを入力
-        const API_KEY = 'YOUR_API_KEY_HERE'; // 必要に応じてAPI Keyも設定
         const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
         const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
+
+        // 状態管理
+        let gapiLoaded = false;
+        let gsiLoaded = false;
+        let tokenClient;
+        let accessToken = null;
 
         // Three.js変数
         let scene, camera, renderer, controls, model;
         let animationId;
         let autoRotate = true;
-
-        // 初期化
-        let gapi;
-        let isSignedIn = false;
 
         // DOM要素
         const authBtn = document.getElementById('auth-btn');
@@ -287,93 +289,106 @@
                 return;
             }
 
-            // gapiが読み込まれるまで待機
+            // gapiが利用可能になるまで待機
             if (typeof gapi === 'undefined') {
-                setTimeout(initializeGapi, 100);
+                console.log('Waiting for gapi...');
+                setTimeout(initializeGapi, 500);
+                return;
+            }
+
+            // GAPI クライアントライブラリを読み込み
+            gapi.load('client', initializeGapiClient);
+        }
+
+        async function initializeGapiClient() {
+            try {
+                await gapi.client.init({
+                    discoveryDocs: [DISCOVERY_DOC],
+                });
+                gapiLoaded = true;
+                console.log('GAPI client loaded');
+                showStatus('🔧 Google API読み込み完了', 'success');
+                maybeEnableButtons();
+            } catch (error) {
+                console.error('Error loading GAPI client:', error);
+                showStatus('❌ GAPI初期化エラー: ' + error.message, 'error');
+            }
+        }
+
+        // Google Identity Services初期化
+        function initializeGsi() {
+            if (typeof google === 'undefined') {
+                console.log('Waiting for Google Identity Services...');
+                setTimeout(initializeGsi, 500);
                 return;
             }
 
             try {
-                // auth2とclientを順次読み込み
-                gapi.load('auth2', () => {
-                    gapi.auth2.init({
-                        client_id: CLIENT_ID,
-                    }).then(() => {
-                        console.log('Auth2 initialized');
-                        const authInstance = gapi.auth2.getAuthInstance();
-                        isSignedIn = authInstance.isSignedIn.get();
-                        
-                        // clientの初期化
-                        gapi.load('client', () => {
-                            gapi.client.init({
-                                discoveryDocs: [DISCOVERY_DOC],
-                            }).then(() => {
-                                console.log('Client initialized');
-                                updateSigninStatus();
-                                showStatus('🔧 Google API初期化完了', 'success');
-                            }).catch(error => {
-                                showStatus('❌ クライアント初期化エラー: ' + error.message, 'error');
-                            });
-                        });
-                    }).catch(error => {
-                        showStatus('❌ 認証初期化エラー: ' + error.message, 'error');
-                    });
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: (tokenResponse) => {
+                        console.log('Token received:', tokenResponse);
+                        accessToken = tokenResponse.access_token;
+                        if (tokenResponse.access_token) {
+                            showStatus('✅ Google Driveに接続しました', 'success');
+                            authBtn.style.display = 'none';
+                            signoutBtn.style.display = 'inline-block';
+                            loadFolders();
+                        }
+                    },
                 });
+                gsiLoaded = true;
+                console.log('GSI loaded');
+                maybeEnableButtons();
             } catch (error) {
-                showStatus('❌ Google API初期化エラー: ' + error.message, 'error');
+                console.error('Error loading GSI:', error);
+                showStatus('❌ GSI初期化エラー: ' + error.message, 'error');
             }
         }
 
-        // 認証状態更新
-        function updateSigninStatus() {
-            if (isSignedIn) {
-                authBtn.style.display = 'none';
-                signoutBtn.style.display = 'inline-block';
-                showStatus('✅ Google Driveに接続しました', 'success');
-                loadFolders();
-            } else {
-                authBtn.style.display = 'inline-block';
-                signoutBtn.style.display = 'none';
+        function maybeEnableButtons() {
+            if (gapiLoaded && gsiLoaded) {
+                authBtn.disabled = false;
                 showStatus('📝 Google Driveに接続してください', '');
-                hideAllSections();
             }
         }
 
         // サインイン
         function signIn() {
-            if (!gapi || !gapi.auth2) {
-                showStatus('❌ Google APIが初期化されていません', 'error');
+            if (!tokenClient) {
+                showStatus('❌ 認証クライアントが初期化されていません', 'error');
                 return;
             }
 
             try {
-                const authInstance = gapi.auth2.getAuthInstance();
-                authInstance.signIn({
-                    scope: SCOPES
-                }).then(() => {
-                    isSignedIn = true;
-                    updateSigninStatus();
-                }).catch(error => {
-                    showStatus('❌ サインインエラー: ' + error.message, 'error');
-                });
+                // トークンが既にある場合は削除
+                if (accessToken) {
+                    google.accounts.oauth2.revoke(accessToken);
+                }
+                
+                // 新しいトークンを要求
+                tokenClient.requestAccessToken();
             } catch (error) {
+                console.error('Sign in error:', error);
                 showStatus('❌ サインインエラー: ' + error.message, 'error');
             }
         }
 
         // サインアウト
         function signOut() {
-            if (!gapi || !gapi.auth2) {
-                showStatus('❌ Google APIが初期化されていません', 'error');
-                return;
-            }
-
             try {
-                const authInstance = gapi.auth2.getAuthInstance();
-                authInstance.signOut().then(() => {
-                    isSignedIn = false;
-                    updateSigninStatus();
-                });
+                if (accessToken) {
+                    google.accounts.oauth2.revoke(accessToken, () => {
+                        console.log('Access token revoked');
+                    });
+                    accessToken = null;
+                }
+                
+                authBtn.style.display = 'inline-block';
+                signoutBtn.style.display = 'none';
+                showStatus('📝 Google Driveに接続してください', '');
+                hideAllSections();
             } catch (error) {
                 showStatus('❌ サインアウトエラー: ' + error.message, 'error');
             }
@@ -381,10 +396,13 @@
 
         // フォルダ読み込み
         function loadFolders() {
-            if (!gapi || !gapi.client || !gapi.client.drive) {
-                showStatus('❌ Google Drive APIが初期化されていません', 'error');
+            if (!accessToken) {
+                showStatus('❌ アクセストークンがありません', 'error');
                 return;
             }
+
+            // アクセストークンを設定
+            gapi.client.setToken({access_token: accessToken});
 
             try {
                 gapi.client.drive.files.list({
@@ -399,9 +417,11 @@
                         showStatus('📁 フォルダが見つかりませんでした', '');
                     }
                 }).catch(error => {
+                    console.error('Folder loading error:', error);
                     showStatus('❌ フォルダ読み込みエラー: ' + error.message, 'error');
                 });
             } catch (error) {
+                console.error('Folder loading error:', error);
                 showStatus('❌ フォルダ読み込みエラー: ' + error.message, 'error');
             }
         }
@@ -425,10 +445,13 @@
 
         // ファイル読み込み
         function loadFiles(folderId, folderName) {
-            if (!gapi || !gapi.client || !gapi.client.drive) {
-                showStatus('❌ Google Drive APIが初期化されていません', 'error');
+            if (!accessToken) {
+                showStatus('❌ アクセストークンがありません', 'error');
                 return;
             }
+
+            // アクセストークンを設定
+            gapi.client.setToken({access_token: accessToken});
 
             try {
                 gapi.client.drive.files.list({
@@ -439,9 +462,11 @@
                     const files = response.result.files;
                     displayFiles(files, folderName);
                 }).catch(error => {
+                    console.error('File loading error:', error);
                     showStatus('❌ ファイル読み込みエラー: ' + error.message, 'error');
                 });
             } catch (error) {
+                console.error('File loading error:', error);
                 showStatus('❌ ファイル読み込みエラー: ' + error.message, 'error');
             }
         }
