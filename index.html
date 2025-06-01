@@ -1,33 +1,4 @@
-// イベントリスナー
-        authBtn.addEventListener('click', signIn);
-        signoutBtn.addEventListener('click', signOut);
-        backToFolders.addEventListener('click', () => {
-            fileSection.style.display = 'none';
-            folderSection.style.display = 'block';
-        });
-        backToFiles.addEventListener('click', () => {
-            viewerSection.style.display = 'none';
-            fileSection.style.display = 'block';
-        });
-        resetCameraBtn.addEventListener('click', resetCamera);
-        toggleRotationBtn.addEventListener('click', toggleAutoRotation);
-        
-        // 新しいイベントリスナー
-        prevFileBtn.addEventListener('click', () => navigateFiles('prev'));
-        nextFileBtn.addEventListener('click', () => navigateFiles('next'));
-        loadSingleBtn.addEventListener('click', loadSingleModel);
-        addToSceneBtn.addEventListener('click', addModelToScene);
-        clearSceneBtn.addEventListener('click', clearScene);
-        
-        // 位置制御イベントリスナー
-        posXSlider.addEventListener('input', updateSelectedModelPosition);
-        posYSlider.addEventListener('input', updateSelectedModelPosition);
-        posZSlider.addEventListener('input', updateSelectedModelPosition);
-        scaleSlider.addEventListener('input', updateSelectedModelPosition);
-        
-        // グローバル関数として定義（HTMLのonclickから呼び出されるため）
-        window.selectModel = selectModel;
-        window.removeModel = removeModel;<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -311,7 +282,7 @@
             h1 { font-size: 2rem; }
             .container { padding: 10px; }
             .auth-section, .folder-section, .file-section, .viewer-section { padding: 20px; }
-            .folder-list, .file-list { grid-template-columns: 1fr; }
+            .folder-list { grid-template-columns: 1fr; }
             #viewer { height: 50vh; }
             input[type="range"] { width: 150px; }
         }
@@ -341,7 +312,6 @@
             <h2>🎨 3Dモデルを選択</h2>
             <button id="back-to-folders" class="btn">← フォルダ一覧に戻る</button>
             
-            <!-- ファイル選択UI -->
             <div class="file-selector">
                 <div class="selector-container">
                     <button id="prev-file" class="nav-btn">❮</button>
@@ -361,7 +331,6 @@
                 </div>
             </div>
             
-            <!-- シーン内モデル一覧 -->
             <div id="scene-models" class="scene-models" style="display:none;">
                 <h3>📦 シーン内のモデル</h3>
                 <div id="models-list"></div>
@@ -375,7 +344,6 @@
                 <div class="loading" id="loading">読み込み中...</div>
             </div>
             
-            <!-- 選択中モデルの位置制御 -->
             <div id="position-controls" class="position-controls" style="display:none;">
                 <h3>🎯 選択中モデルの位置調整</h3>
                 <div class="position-group">
@@ -430,32 +398,8 @@
         let currentFileIndex = 0;
         
         // 3Dシーン管理
-        let sceneModels = []; // シーン内のモデル配列
-        let selectedModelIndex = -1; // 選択中のモデル
-
-        // 診断情報表示
-        function updateDiagnostics() {
-            const diagnostics = `
-診断情報:
-- GAPI読み込み: ${gapiLoaded ? '✅' : '❌'}
-- GSI読み込み: ${gsiLoaded ? '✅' : '❌'}  
-- TokenClient: ${tokenClient ? '✅' : '❌'}
-- Google Object: ${typeof google !== 'undefined' ? '✅' : '❌'}
-- Google.accounts: ${typeof google !== 'undefined' && google.accounts ? '✅' : '❌'}
-- Google.accounts.oauth2: ${typeof google !== 'undefined' && google.accounts && google.accounts.oauth2 ? '✅' : '❌'}
-            `;
-            console.log(diagnostics);
-            
-            // 画面にも表示
-            let diagDiv = document.getElementById('diagnostics');
-            if (!diagDiv) {
-                diagDiv = document.createElement('div');
-                diagDiv.id = 'diagnostics';
-                diagDiv.style.cssText = 'background: rgba(0,0,0,0.7); color: white; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px; white-space: pre-line; border-radius: 5px;';
-                document.querySelector('.auth-section').appendChild(diagDiv);
-            }
-            diagDiv.textContent = diagnostics;
-        }
+        let sceneModels = [];
+        let selectedModelIndex = -1;
 
         // Three.js変数
         let scene, camera, renderer, controls, model;
@@ -470,7 +414,6 @@
         const fileSection = document.getElementById('file-section');
         const viewerSection = document.getElementById('viewer-section');
         const folderList = document.getElementById('folder-list');
-        const fileList = document.getElementById('file-list');
         const backToFolders = document.getElementById('back-to-folders');
         const backToFiles = document.getElementById('back-to-files');
         const modelTitle = document.getElementById('model-title');
@@ -500,12 +443,25 @@
         const posZValue = document.getElementById('pos-z-value');
         const scaleValue = document.getElementById('scale-value');
 
+        // 診断情報表示
+        function updateDiagnostics() {
+            const diagnostics = `
+診断情報:
+- GAPI読み込み: ${gapiLoaded ? '✅' : '❌'}
+- GSI読み込み: ${gsiLoaded ? '✅' : '❌'}  
+- TokenClient: ${tokenClient ? '✅' : '❌'}
+- Google Object: ${typeof google !== 'undefined' ? '✅' : '❌'}
+- Google.accounts: ${typeof google !== 'undefined' && google.accounts ? '✅' : '❌'}
+- Google.accounts.oauth2: ${typeof google !== 'undefined' && google.accounts && google.accounts.oauth2 ? '✅' : '❌'}
+            `;
+            console.log(diagnostics);
+        }
+
         // Google API初期化
         function initializeGapi() {
             console.log('=== GAPI初期化開始 ===');
             updateDiagnostics();
 
-            // gapiが利用可能になるまで待機
             if (typeof gapi === 'undefined') {
                 console.log('gapiが未定義、500ms後にリトライ');
                 setTimeout(initializeGapi, 500);
@@ -513,7 +469,6 @@
             }
 
             console.log('gapi検出、client読み込み開始');
-            // GAPI クライアントライブラリを読み込み
             gapi.load('client', initializeGapiClient);
         }
 
@@ -590,7 +545,6 @@
                 console.error('❌ GSI初期化エラー:', error);
                 showStatus('❌ GSI初期化エラー: ' + error.message, 'error');
                 updateDiagnostics();
-                // リトライ
                 setTimeout(initializeGsi, 1000);
             }
         }
@@ -619,7 +573,6 @@
                 console.error('❌ TokenClientが初期化されていません');
                 showStatus('❌ 認証クライアントが初期化されていません', 'error');
                 
-                // 強制的に再初期化を試行
                 console.log('🔄 GSI再初期化を試行...');
                 initializeGsi();
                 return;
@@ -629,13 +582,11 @@
                 console.log('🚀 アクセストークンをリクエスト中...');
                 showStatus('🔄 認証中...', '');
                 
-                // トークンが既にある場合は削除
                 if (accessToken) {
                     console.log('既存のトークンを破棄');
                     google.accounts.oauth2.revoke(accessToken);
                 }
                 
-                // 新しいトークンを要求
                 tokenClient.requestAccessToken({prompt: 'consent'});
             } catch (error) {
                 console.error('❌ サインインエラー:', error);
@@ -669,7 +620,6 @@
                 return;
             }
 
-            // アクセストークンを設定
             gapi.client.setToken({access_token: accessToken});
 
             try {
@@ -718,7 +668,6 @@
                 return;
             }
 
-            // アクセストークンを設定
             gapi.client.setToken({access_token: accessToken});
 
             try {
@@ -772,7 +721,6 @@
             currentFileSize.textContent = `サイズ: ${size}`;
             fileCounter.textContent = `${currentFileIndex + 1} / ${currentFiles.length}`;
             
-            // ボタンの有効/無効を設定
             prevFileBtn.disabled = currentFileIndex === 0;
             nextFileBtn.disabled = currentFileIndex === currentFiles.length - 1;
             loadSingleBtn.disabled = false;
@@ -798,19 +746,14 @@
                 showViewer(file.name);
                 showLoading(true);
                 
-                // シーンをクリア
                 clearScene();
                 
-                // ファイルダウンロード
                 const response = await gapi.client.drive.files.get({
                     fileId: file.id,
                     alt: 'media'
                 });
 
-                // ArrayBufferに変換
                 const arrayBuffer = str2ab(response.body);
-                
-                // Three.jsで読み込み
                 await loadGLBModel(arrayBuffer, file.name, true);
                 
             } catch (error) {
@@ -828,16 +771,12 @@
                 showViewer(`シーン: ${sceneModels.length + 1}個のモデル`);
                 showLoading(true);
                 
-                // ファイルダウンロード
                 const response = await gapi.client.drive.files.get({
                     fileId: file.id,
                     alt: 'media'
                 });
 
-                // ArrayBufferに変換
                 const arrayBuffer = str2ab(response.body);
-                
-                // Three.jsで読み込み（シーンに追加）
                 await loadGLBModel(arrayBuffer, file.name, false);
                 
             } catch (error) {
@@ -860,22 +799,18 @@
         function initThreeJS() {
             const viewer = document.getElementById('viewer');
             
-            // シーン
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x222222);
 
-            // カメラ
             camera = new THREE.PerspectiveCamera(75, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
             camera.position.set(0, 0, 5);
 
-            // レンダラー
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(viewer.clientWidth, viewer.clientHeight);
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             viewer.appendChild(renderer.domElement);
 
-            // ライト
             const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
             scene.add(ambientLight);
 
@@ -884,21 +819,15 @@
             directionalLight.castShadow = true;
             scene.add(directionalLight);
 
-            // マウスコントロール（簡易版）
             addMouseControls();
-
-            // ウィンドウリサイズ対応
             window.addEventListener('resize', onWindowResize);
-            
-            // レンダリング開始
             animate();
         }
 
         // GLBモデル読み込み（改良版）
-        async function loadGLBModel(arrayBuffer, fileName, clearScene = false) {
+        async function loadGLBModel(arrayBuffer, fileName, clearSceneFlag = false) {
             try {
-                if (clearScene) {
-                    // 既存モデル全削除
+                if (clearSceneFlag) {
                     sceneModels.forEach(modelData => {
                         scene.remove(modelData.model);
                     });
@@ -906,8 +835,6 @@
                     selectedModelIndex = -1;
                 }
 
-                // デモ用のカラフルなボックスを作成
-                // 実際のプロジェクトではGLTFLoaderを使用してください
                 const geometry = new THREE.BoxGeometry(1, 1, 1);
                 const material = new THREE.MeshLambertMaterial({ 
                     color: new THREE.Color().setHSL(Math.random(), 0.7, 0.5)
@@ -916,7 +843,6 @@
                 model.castShadow = true;
                 model.receiveShadow = true;
                 
-                // モデルの位置を設定（複数モデルの場合は分散配置）
                 const spacing = 2.5;
                 const numModels = sceneModels.length;
                 model.position.set(
@@ -927,7 +853,6 @@
                 
                 scene.add(model);
                 
-                // モデルデータを保存
                 const modelData = {
                     model: model,
                     name: fileName,
@@ -936,8 +861,7 @@
                 };
                 sceneModels.push(modelData);
                 
-                // 最初のモデルまたは単体表示の場合は選択状態にする
-                if (clearScene || sceneModels.length === 1) {
+                if (clearSceneFlag || sceneModels.length === 1) {
                     selectedModelIndex = sceneModels.length - 1;
                     updateSelectedModel();
                 }
@@ -1005,7 +929,6 @@
                 scene.remove(sceneModels[index].model);
                 sceneModels.splice(index, 1);
                 
-                // 選択インデックスを調整
                 if (selectedModelIndex >= index) {
                     selectedModelIndex = Math.max(-1, selectedModelIndex - 1);
                 }
@@ -1021,7 +944,6 @@
                 const modelData = sceneModels[selectedModelIndex];
                 const model = modelData.model;
                 
-                // UIの値を更新
                 posXSlider.value = model.position.x;
                 posYSlider.value = model.position.y;
                 posZSlider.value = model.position.z;
@@ -1094,12 +1016,12 @@
                 camera.position.z = Math.max(1, Math.min(10, camera.position.z));
             });
 
-            // スムーズな回転
             function updateRotation() {
                 rotationX += (targetRotationX - rotationX) * 0.1;
                 rotationY += (targetRotationY - rotationY) * 0.1;
                 
-                if (model) {
+                if (sceneModels.length > 0 && selectedModelIndex >= 0) {
+                    const model = sceneModels[selectedModelIndex].model;
                     model.rotation.x = rotationX;
                     model.rotation.y = rotationY;
                 }
@@ -1159,7 +1081,6 @@
 
         function resetCamera() {
             camera.position.set(0, 0, 5);
-            // 全モデルの回転をリセット
             sceneModels.forEach(modelData => {
                 modelData.model.rotation.set(0, 0, 0);
             });
@@ -1183,23 +1104,34 @@
         });
         resetCameraBtn.addEventListener('click', resetCamera);
         toggleRotationBtn.addEventListener('click', toggleAutoRotation);
+        
+        prevFileBtn.addEventListener('click', () => navigateFiles('prev'));
+        nextFileBtn.addEventListener('click', () => navigateFiles('next'));
+        loadSingleBtn.addEventListener('click', loadSingleModel);
+        addToSceneBtn.addEventListener('click', addModelToScene);
+        clearSceneBtn.addEventListener('click', clearScene);
+        
+        posXSlider.addEventListener('input', updateSelectedModelPosition);
+        posYSlider.addEventListener('input', updateSelectedModelPosition);
+        posZSlider.addEventListener('input', updateSelectedModelPosition);
+        scaleSlider.addEventListener('input', updateSelectedModelPosition);
+        
+        window.selectModel = selectModel;
+        window.removeModel = removeModel;
 
-        // 初期化を段階的に実行
+        // 初期化
         function startInitialization() {
             console.log('🚀 初期化プロセス開始');
             showStatus('🔄 Google APIを読み込み中...', '');
             updateDiagnostics();
             
-            // まずGAPIを初期化
             initializeGapi();
             
-            // GSIの初期化は2秒後に開始
             setTimeout(() => {
                 console.log('🔄 GSI初期化開始...');
                 initializeGsi();
             }, 2000);
             
-            // 10秒後に強制診断
             setTimeout(() => {
                 console.log('🔍 10秒後の強制診断:');
                 updateDiagnostics();
@@ -1210,7 +1142,6 @@
             }, 10000);
         }
 
-        // 初期化
         window.addEventListener('load', () => {
             console.log('📄 ページ読み込み完了');
             setTimeout(startInitialization, 2000);
