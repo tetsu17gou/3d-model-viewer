@@ -281,40 +281,46 @@
         const toggleRotationBtn = document.getElementById('toggle-rotation');
 
         // Google API初期化
-        async function initializeGapi() {
+        function initializeGapi() {
             if (CLIENT_ID === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
                 showStatus('⚠️ Client IDが設定されていません。Google Cloud Consoleで取得してください。', 'error');
                 return;
             }
 
+            // gapiが読み込まれるまで待機
+            if (typeof gapi === 'undefined') {
+                setTimeout(initializeGapi, 100);
+                return;
+            }
+
             try {
-                await gapi.load('auth2', initAuth);
-                await gapi.load('client', initClient);
+                // auth2とclientを順次読み込み
+                gapi.load('auth2', () => {
+                    gapi.auth2.init({
+                        client_id: CLIENT_ID,
+                    }).then(() => {
+                        console.log('Auth2 initialized');
+                        const authInstance = gapi.auth2.getAuthInstance();
+                        isSignedIn = authInstance.isSignedIn.get();
+                        
+                        // clientの初期化
+                        gapi.load('client', () => {
+                            gapi.client.init({
+                                discoveryDocs: [DISCOVERY_DOC],
+                            }).then(() => {
+                                console.log('Client initialized');
+                                updateSigninStatus();
+                                showStatus('🔧 Google API初期化完了', 'success');
+                            }).catch(error => {
+                                showStatus('❌ クライアント初期化エラー: ' + error.message, 'error');
+                            });
+                        });
+                    }).catch(error => {
+                        showStatus('❌ 認証初期化エラー: ' + error.message, 'error');
+                    });
+                });
             } catch (error) {
                 showStatus('❌ Google API初期化エラー: ' + error.message, 'error');
-            }
-        }
-
-        async function initAuth() {
-            try {
-                await gapi.auth2.init({
-                    client_id: CLIENT_ID,
-                });
-                const authInstance = gapi.auth2.getAuthInstance();
-                isSignedIn = authInstance.isSignedIn.get();
-                updateSigninStatus();
-            } catch (error) {
-                showStatus('❌ 認証初期化エラー: ' + error.message, 'error');
-            }
-        }
-
-        async function initClient() {
-            try {
-                await gapi.client.init({
-                    discoveryDocs: [DISCOVERY_DOC],
-                });
-            } catch (error) {
-                showStatus('❌ クライアント初期化エラー: ' + error.message, 'error');
             }
         }
 
@@ -329,43 +335,72 @@
                 authBtn.style.display = 'inline-block';
                 signoutBtn.style.display = 'none';
                 showStatus('📝 Google Driveに接続してください', '');
+                hideAllSections();
             }
         }
 
         // サインイン
-        async function signIn() {
+        function signIn() {
+            if (!gapi || !gapi.auth2) {
+                showStatus('❌ Google APIが初期化されていません', 'error');
+                return;
+            }
+
             try {
                 const authInstance = gapi.auth2.getAuthInstance();
-                await authInstance.signIn({
+                authInstance.signIn({
                     scope: SCOPES
+                }).then(() => {
+                    isSignedIn = true;
+                    updateSigninStatus();
+                }).catch(error => {
+                    showStatus('❌ サインインエラー: ' + error.message, 'error');
                 });
-                isSignedIn = true;
-                updateSigninStatus();
             } catch (error) {
                 showStatus('❌ サインインエラー: ' + error.message, 'error');
             }
         }
 
         // サインアウト
-        async function signOut() {
-            const authInstance = gapi.auth2.getAuthInstance();
-            await authInstance.signOut();
-            isSignedIn = false;
-            updateSigninStatus();
-            hideAllSections();
+        function signOut() {
+            if (!gapi || !gapi.auth2) {
+                showStatus('❌ Google APIが初期化されていません', 'error');
+                return;
+            }
+
+            try {
+                const authInstance = gapi.auth2.getAuthInstance();
+                authInstance.signOut().then(() => {
+                    isSignedIn = false;
+                    updateSigninStatus();
+                });
+            } catch (error) {
+                showStatus('❌ サインアウトエラー: ' + error.message, 'error');
+            }
         }
 
         // フォルダ読み込み
-        async function loadFolders() {
+        function loadFolders() {
+            if (!gapi || !gapi.client || !gapi.client.drive) {
+                showStatus('❌ Google Drive APIが初期化されていません', 'error');
+                return;
+            }
+
             try {
-                const response = await gapi.client.drive.files.list({
+                gapi.client.drive.files.list({
                     q: "mimeType='application/vnd.google-apps.folder' and trashed=false",
                     fields: 'files(id, name)',
                     orderBy: 'name'
+                }).then(response => {
+                    const folders = response.result.files;
+                    if (folders && folders.length > 0) {
+                        displayFolders(folders);
+                    } else {
+                        showStatus('📁 フォルダが見つかりませんでした', '');
+                    }
+                }).catch(error => {
+                    showStatus('❌ フォルダ読み込みエラー: ' + error.message, 'error');
                 });
-
-                const folders = response.result.files;
-                displayFolders(folders);
             } catch (error) {
                 showStatus('❌ フォルダ読み込みエラー: ' + error.message, 'error');
             }
@@ -389,16 +424,23 @@
         }
 
         // ファイル読み込み
-        async function loadFiles(folderId, folderName) {
+        function loadFiles(folderId, folderName) {
+            if (!gapi || !gapi.client || !gapi.client.drive) {
+                showStatus('❌ Google Drive APIが初期化されていません', 'error');
+                return;
+            }
+
             try {
-                const response = await gapi.client.drive.files.list({
+                gapi.client.drive.files.list({
                     q: `'${folderId}' in parents and (name contains '.glb' or name contains '.GLB') and trashed=false`,
                     fields: 'files(id, name, size)',
                     orderBy: 'name'
+                }).then(response => {
+                    const files = response.result.files;
+                    displayFiles(files, folderName);
+                }).catch(error => {
+                    showStatus('❌ ファイル読み込みエラー: ' + error.message, 'error');
                 });
-
-                const files = response.result.files;
-                displayFiles(files, folderName);
             } catch (error) {
                 showStatus('❌ ファイル読み込みエラー: ' + error.message, 'error');
             }
@@ -653,8 +695,16 @@
         resetCameraBtn.addEventListener('click', resetCamera);
         toggleRotationBtn.addEventListener('click', toggleAutoRotation);
 
+        // 初期化を遅延実行
+        function delayedInit() {
+            // ページ読み込み完了後に少し待ってから初期化
+            setTimeout(() => {
+                initializeGapi();
+            }, 1000);
+        }
+
         // 初期化
-        window.addEventListener('load', initializeGapi);
+        window.addEventListener('load', delayedInit);
     </script>
 </body>
 </html>
