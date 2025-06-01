@@ -380,14 +380,27 @@
             
             <!-- デバッグ用テストボタン -->
             <div class="local-file-section">
-                <h4>🧪 デバッグテスト</h4>
+                <h4>🧪 外部JavaScript テスト</h4>
                 <div class="local-file-actions">
                     <button id="test-alert" class="btn">🔔 アラートテスト</button>
                     <button id="test-console" class="btn">📝 コンソールテスト</button>
                     <button id="test-status" class="btn">💬 ステータステスト</button>
                 </div>
                 <p class="help-text">
-                    これらのボタンでJavaScriptの動作をテストできます
+                    外部JavaScript（イベントリスナー）の動作をテストします
+                </p>
+            </div>
+            
+            <!-- 緊急テストボタン（インライン）-->
+            <div class="local-file-section">
+                <h4>🚨 緊急テスト（インラインJavaScript）</h4>
+                <div class="local-file-actions">
+                    <button onclick="alert('✅ インラインJavaScriptが動作しています！')" class="btn">🔥 インラインテスト</button>
+                    <button onclick="console.log('✅ インラインコンソールテスト成功')" class="btn">📝 インラインコンソール</button>
+                    <button onclick="document.getElementById('load-status').innerHTML='✅ インライン操作成功！'" class="btn">💬 インライン操作</button>
+                </div>
+                <p class="help-text">
+                    これらのボタンが動作しない場合、JavaScriptが完全に無効になっています
                 </p>
             </div>
             
@@ -555,25 +568,17 @@
         console.log('testConsoleBtn:', testConsoleBtn ? 'OK' : 'NOT FOUND');
         console.log('testStatusBtn:', testStatusBtn ? 'OK' : 'NOT FOUND');
         
-        // 初期化（デバッグ機能付き）
-        window.addEventListener('load', () => {
-            console.log('🚀 3D Model Viewer 初期化開始');
-            
-            // DOMContentLoadedも確認
-            if (document.readyState === 'loading') {
-                console.log('⚠️ DOM読み込み中...');
-                document.addEventListener('DOMContentLoaded', () => {
-                    console.log('✅ DOMContentLoaded完了');
-                    initializeApp();
-                });
-            } else {
-                console.log('✅ DOM読み込み済み');
-                initializeApp();
-            }
-        });
+        // 初期化（改良版 - 複数の初期化タイミングに対応）
+        let isInitialized = false;
         
         function initializeApp() {
-            console.log('📱 アプリケーション初期化');
+            if (isInitialized) {
+                console.log('⚠️ 重複初期化をスキップ');
+                return;
+            }
+            
+            console.log('📱 アプリケーション初期化開始');
+            isInitialized = true;
             
             // ブラウザ情報をログ出力
             console.log('ブラウザ:', navigator.userAgent);
@@ -601,8 +606,19 @@
                 alert('テスト関数が正常に動作しています！');
             };
             
+            // 強制的なイベントリスナー再設定関数
+            window.forceSetupListeners = function() {
+                console.log('🔧 イベントリスナーを強制再設定');
+                setupEventListeners();
+            };
+            
             // イベントリスナー設定
-            setupEventListeners();
+            try {
+                setupEventListeners();
+                console.log('✅ イベントリスナー設定完了');
+            } catch (error) {
+                console.error('❌ イベントリスナー設定エラー:', error);
+            }
             
             // ステータス表示テスト
             showStatus('✅ アプリケーション初期化完了<br><small>テスト関数が利用可能になりました</small>', 'success');
@@ -611,7 +627,7 @@
             console.log('📋 テスト関数の使用方法:');
             console.log('window.simpleTest() - 簡単なテスト');
             console.log('window.testButtonClick("test-alert") - アラートテストボタン');
-            console.log('window.testButtonClick("load-local-single") - ローカルファイル読み込み');
+            console.log('window.forceSetupListeners() - イベントリスナー再設定');
             
             // Google Drive読み込みを非同期で実行（UIをブロックしない）
             setTimeout(() => {
@@ -619,6 +635,24 @@
                 loadGoogleDriveFiles();
             }, 100);
         }
+        
+        // 複数のタイミングで初期化を試行
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            // DOMが既に読み込まれている場合は即座に実行
+            setTimeout(initializeApp, 10);
+        }
+        
+        window.addEventListener('load', initializeApp);
+        
+        // 3秒後にも念のため実行（遅延読み込み対策）
+        setTimeout(() => {
+            if (!isInitialized) {
+                console.log('🔄 遅延初期化を実行');
+                initializeApp();
+            }
+        }, 3000);
         
         // イベントリスナー設定
         function setupEventListeners() {
