@@ -485,7 +485,7 @@
             distance: 10 
         };
         
-        // DOM要素
+        // DOM要素（デバッグ機能付き）
         const fileSection = document.getElementById('file-section');
         const viewerSection = document.getElementById('viewer-section');
         const loadStatus = document.getElementById('load-status');
@@ -529,38 +529,125 @@
         const rotYValue = document.getElementById('rot-y-value');
         const scaleValue = document.getElementById('scale-value');
         
-        // 初期化
+        // DOM要素存在確認
+        console.log('DOM要素チェック:');
+        console.log('loadLocalSingleBtn:', loadLocalSingleBtn ? 'OK' : 'NOT FOUND');
+        console.log('addManualFileBtn:', addManualFileBtn ? 'OK' : 'NOT FOUND');
+        console.log('changeFolderBtn:', changeFolderBtn ? 'OK' : 'NOT FOUND');
+        console.log('reloadFilesBtn:', reloadFilesBtn ? 'OK' : 'NOT FOUND');
+        
+        // 初期化（デバッグ機能付き）
         window.addEventListener('load', () => {
-            console.log('3D Model Viewer 初期化');
+            console.log('🚀 3D Model Viewer 初期化開始');
+            
+            // DOMContentLoadedも確認
+            if (document.readyState === 'loading') {
+                console.log('⚠️ DOM読み込み中...');
+                document.addEventListener('DOMContentLoaded', () => {
+                    console.log('✅ DOMContentLoaded完了');
+                    initializeApp();
+                });
+            } else {
+                console.log('✅ DOM読み込み済み');
+                initializeApp();
+            }
+        });
+        
+        function initializeApp() {
+            console.log('📱 アプリケーション初期化');
+            
+            // ブラウザ情報をログ出力
+            console.log('ブラウザ:', navigator.userAgent);
+            console.log('DOM ready state:', document.readyState);
+            
+            // イベントリスナー設定
             setupEventListeners();
+            
+            // テスト用ボタンクリック関数をグローバルに追加
+            window.testButtonClick = function(buttonId) {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    console.log(`🧪 テストクリック: ${buttonId}`);
+                    button.click();
+                } else {
+                    console.error(`❌ ボタンが見つかりません: ${buttonId}`);
+                }
+            };
+            
+            // ステータス表示テスト
+            showStatus('✅ アプリケーション初期化完了<br><small>ボタンクリックをテストしてください</small>', 'success');
             
             // Google Drive読み込みを非同期で実行（UIをブロックしない）
             setTimeout(() => {
+                console.log('🔄 Google Drive読み込み開始');
                 loadGoogleDriveFiles();
-            }, 100); // 100ms後に実行してUIの初期化を優先
-        });
+            }, 100);
+        }
         
         // イベントリスナー設定
         function setupEventListeners() {
+            console.log('イベントリスナー設定開始');
+            
+            // DOM要素の存在確認
+            const elements = {
+                prevFileBtn, nextFileBtn, loadSingleBtn, addToSceneBtn, clearSceneBtn,
+                loadLocalSingleBtn, addManualFileBtn, changeFolderBtn, reloadFilesBtn,
+                backToFiles, resetCameraBtn, toggleRotationBtn, lightingSelect
+            };
+            
+            for (const [name, element] of Object.entries(elements)) {
+                if (!element) {
+                    console.error(`DOM要素が見つかりません: ${name}`);
+                } else {
+                    console.log(`DOM要素確認OK: ${name}`);
+                }
+            }
+            
             // ファイル操作
-            prevFileBtn.addEventListener('click', () => navigateFiles('prev'));
-            nextFileBtn.addEventListener('click', () => navigateFiles('next'));
-            loadSingleBtn.addEventListener('click', loadSingleModel);
-            addToSceneBtn.addEventListener('click', addModelToScene);
-            clearSceneBtn.addEventListener('click', clearScene);
+            if (prevFileBtn) prevFileBtn.addEventListener('click', () => {
+                console.log('前のファイルボタンクリック');
+                navigateFiles('prev');
+            });
+            if (nextFileBtn) nextFileBtn.addEventListener('click', () => {
+                console.log('次のファイルボタンクリック');
+                navigateFiles('next');
+            });
+            if (loadSingleBtn) loadSingleBtn.addEventListener('click', () => {
+                console.log('単体表示ボタンクリック');
+                loadSingleModel();
+            });
+            if (addToSceneBtn) addToSceneBtn.addEventListener('click', () => {
+                console.log('シーンに追加ボタンクリック');
+                addModelToScene();
+            });
+            if (clearSceneBtn) clearSceneBtn.addEventListener('click', () => {
+                console.log('シーンクリアボタンクリック');
+                clearScene();
+            });
             
             // ローカルファイル
-            loadLocalSingleBtn.addEventListener('click', () => {
+            if (loadLocalSingleBtn) loadLocalSingleBtn.addEventListener('click', () => {
+                console.log('ローカルファイル読み込みボタンクリック');
                 localFileInput.click();
             });
-            localFileInput.addEventListener('change', handleLocalFile);
+            if (localFileInput) localFileInput.addEventListener('change', (event) => {
+                console.log('ファイル選択変更');
+                handleLocalFile(event);
+            });
             
             // 手動追加
-            addManualFileBtn.addEventListener('click', addManualFile);
+            if (addManualFileBtn) addManualFileBtn.addEventListener('click', () => {
+                console.log('手動追加ボタンクリック');
+                addManualFile();
+            });
             
             // フォルダID変更
-            changeFolderBtn.addEventListener('click', changeFolderId);
-            reloadFilesBtn.addEventListener('click', () => {
+            if (changeFolderBtn) changeFolderBtn.addEventListener('click', () => {
+                console.log('フォルダID変更ボタンクリック');
+                changeFolderId();
+            });
+            if (reloadFilesBtn) reloadFilesBtn.addEventListener('click', () => {
+                console.log('再読み込みボタンクリック');
                 showStatus('🔄 再読み込み中...<br><small>他の機能も引き続きご利用いただけます</small>', '');
                 setTimeout(() => {
                     loadGoogleDriveFiles();
@@ -568,26 +655,38 @@
             });
             
             // ビューアー操作
-            backToFiles.addEventListener('click', () => {
+            if (backToFiles) backToFiles.addEventListener('click', () => {
+                console.log('ファイル選択に戻るボタンクリック');
                 viewerSection.style.display = 'none';
                 fileSection.style.display = 'block';
             });
             
-            resetCameraBtn.addEventListener('click', resetCamera);
-            toggleRotationBtn.addEventListener('click', toggleAutoRotation);
-            lightingSelect.addEventListener('change', changeLighting);
+            if (resetCameraBtn) resetCameraBtn.addEventListener('click', () => {
+                console.log('カメラリセットボタンクリック');
+                resetCamera();
+            });
+            if (toggleRotationBtn) toggleRotationBtn.addEventListener('click', () => {
+                console.log('自動回転切り替えボタンクリック');
+                toggleAutoRotation();
+            });
+            if (lightingSelect) lightingSelect.addEventListener('change', () => {
+                console.log('ライティング変更');
+                changeLighting();
+            });
             
             // 回転速度
-            rotationSpeedSlider.addEventListener('input', () => {
+            if (rotationSpeedSlider) rotationSpeedSlider.addEventListener('input', () => {
                 rotationSpeedValue.textContent = rotationSpeedSlider.value;
             });
             
             // 位置制御
-            posXSlider.addEventListener('input', updateSelectedModelPosition);
-            posYSlider.addEventListener('input', updateSelectedModelPosition);
-            posZSlider.addEventListener('input', updateSelectedModelPosition);
-            rotYSlider.addEventListener('input', updateSelectedModelPosition);
-            scaleSlider.addEventListener('input', updateSelectedModelPosition);
+            if (posXSlider) posXSlider.addEventListener('input', updateSelectedModelPosition);
+            if (posYSlider) posYSlider.addEventListener('input', updateSelectedModelPosition);
+            if (posZSlider) posZSlider.addEventListener('input', updateSelectedModelPosition);
+            if (rotYSlider) rotYSlider.addEventListener('input', updateSelectedModelPosition);
+            if (scaleSlider) scaleSlider.addEventListener('input', updateSelectedModelPosition);
+            
+            console.log('イベントリスナー設定完了');
         }
         
         // Google Drive APIを使用してファイル読み込み（非ブロッキング版）
@@ -717,28 +816,44 @@
             loadStatus.className = `status ${type}`;
         }
         
-        // ローカルファイル処理
+        // ローカルファイル処理（デバッグ機能付き）
         function handleLocalFile(event) {
+            console.log('📁 ローカルファイル処理開始');
             const file = event.target.files[0];
-            if (!file) return;
+            if (!file) {
+                console.log('❌ ファイルが選択されていません');
+                return;
+            }
+            
+            console.log('📄 選択されたファイル:', file.name, file.size, 'bytes');
             
             if (!file.name.toLowerCase().endsWith('.glb') && !file.name.toLowerCase().endsWith('.gltf')) {
+                console.log('❌ 不正なファイル形式:', file.name);
                 showStatus('❌ GLBまたはGLTFファイルを選択してください', 'error');
                 return;
             }
             
+            console.log('✅ ファイル形式確認OK');
             showViewer(file.name);
             showLoading(true);
             
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
+                    console.log('📖 ファイル読み込み完了');
                     const arrayBuffer = e.target.result;
+                    console.log('ArrayBuffer サイズ:', arrayBuffer.byteLength);
                     await loadGLBModel(arrayBuffer, file.name, true, 'local');
                 } catch (error) {
+                    console.error('❌ ファイル読み込みエラー:', error);
                     showStatus('❌ ファイル読み込みエラー: ' + error.message, 'error');
                     showLoading(false);
                 }
+            };
+            reader.onerror = function(error) {
+                console.error('❌ FileReader エラー:', error);
+                showStatus('❌ ファイル読み込みエラー', 'error');
+                showLoading(false);
             };
             reader.readAsArrayBuffer(file);
             localFileInput.value = '';
