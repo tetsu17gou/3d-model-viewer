@@ -6,7 +6,7 @@
     <meta name="google-site-verification" content="tXfatBmSPBWjj037VFVbrAT2pNfMGDQlOmnhxgbmolE" />
     <title>3D Model Viewer - Public Access</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         * {
             margin: 0;
@@ -272,6 +272,57 @@
             overflow: hidden;
         }
         
+        #lighting-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 22%;
+            background: rgba(0,0,0,0.8);
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            max-height: 80%;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        #lighting-controls h3 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            text-align: center;
+        }
+        
+        #lighting-controls .position-group {
+            margin: 8px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        #lighting-controls .position-group label {
+            font-size: 0.8rem;
+            width: auto;
+            text-align: left;
+        }
+        
+        #lighting-controls input[type="range"] {
+            width: 100%;
+            margin: 0;
+        }
+        
+        #lighting-controls .small-btn {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            margin-top: 5px;
+        }
+        
+        .lighting-value {
+            font-size: 0.8rem;
+            color: #ccc;
+            text-align: center;
+        }
+        
         .loading {
             position: absolute;
             top: 50%;
@@ -385,6 +436,44 @@
             <button id="back-to-files" class="btn">← ファイル一覧に戻る</button>
             <div id="viewer">
                 <div class="loading" id="loading">読み込み中...</div>
+                
+                <!-- ライティング調整パネル（3Dビューワー内） -->
+                <div id="lighting-controls" style="display:none;">
+                    <h3>💡 ライト調整</h3>
+                    <div class="position-group">
+                        <label>環境光:</label>
+                        <input type="range" id="ambient-intensity" min="0" max="2" step="0.1" value="1.0">
+                        <div class="lighting-value" id="ambient-intensity-value">1.0</div>
+                    </div>
+                    <div class="position-group">
+                        <label>太陽光:</label>
+                        <input type="range" id="directional-intensity" min="0" max="3" step="0.1" value="1.5">
+                        <div class="lighting-value" id="directional-intensity-value">1.5</div>
+                    </div>
+                    <div class="position-group">
+                        <label>太陽X:</label>
+                        <input type="range" id="sun-x" min="-10" max="10" step="0.5" value="5">
+                        <div class="lighting-value" id="sun-x-value">5</div>
+                    </div>
+                    <div class="position-group">
+                        <label>太陽Y:</label>
+                        <input type="range" id="sun-y" min="0" max="20" step="0.5" value="10">
+                        <div class="lighting-value" id="sun-y-value">10</div>
+                    </div>
+                    <div class="position-group">
+                        <label>太陽Z:</label>
+                        <input type="range" id="sun-z" min="-10" max="10" step="0.5" value="5">
+                        <div class="lighting-value" id="sun-z-value">5</div>
+                    </div>
+                    <div class="position-group">
+                        <label>補助光:</label>
+                        <input type="range" id="point-intensity" min="0" max="2" step="0.1" value="0.8">
+                        <div class="lighting-value" id="point-intensity-value">0.8</div>
+                    </div>
+                    <div class="position-group">
+                        <button class="small-btn" onclick="resetLighting()">リセット</button>
+                    </div>
+                </div>
             </div>
             
             <div id="position-controls" class="position-controls" style="display:none;">
@@ -443,44 +532,6 @@
                 <div class="control-group">
                     <button id="reset-camera" class="btn">カメラリセット</button>
                     <button id="toggle-rotation" class="btn">シーン回転 ON/OFF</button>
-                </div>
-            </div>
-            
-            <!-- ライティング調整パネル -->
-            <div id="lighting-controls" class="position-controls" style="display:none;">
-                <h3>💡 ライティング調整</h3>
-                <div class="position-group">
-                    <label>環境光強度:</label>
-                    <input type="range" id="ambient-intensity" min="0" max="2" step="0.1" value="0.6">
-                    <span id="ambient-intensity-value">0.6</span>
-                </div>
-                <div class="position-group">
-                    <label>太陽光強度:</label>
-                    <input type="range" id="directional-intensity" min="0" max="3" step="0.1" value="0.8">
-                    <span id="directional-intensity-value">0.8</span>
-                </div>
-                <div class="position-group">
-                    <label>太陽光X:</label>
-                    <input type="range" id="sun-x" min="-10" max="10" step="0.5" value="5">
-                    <span id="sun-x-value">5</span>
-                </div>
-                <div class="position-group">
-                    <label>太陽光Y:</label>
-                    <input type="range" id="sun-y" min="0" max="20" step="0.5" value="10">
-                    <span id="sun-y-value">10</span>
-                </div>
-                <div class="position-group">
-                    <label>太陽光Z:</label>
-                    <input type="range" id="sun-z" min="-10" max="10" step="0.5" value="5">
-                    <span id="sun-z-value">5</span>
-                </div>
-                <div class="position-group">
-                    <label>補助光強度:</label>
-                    <input type="range" id="point-intensity" min="0" max="2" step="0.1" value="0.5">
-                    <span id="point-intensity-value">0.5</span>
-                </div>
-                <div class="position-group">
-                    <button class="btn" onclick="resetLighting()">ライティングリセット</button>
                 </div>
             </div>
             
@@ -563,7 +614,6 @@
         const selectorGrid = document.getElementById('selector-grid');
         
         // ライティング調整要素
-        const lightingControls = document.getElementById('lighting-controls');
         const ambientIntensitySlider = document.getElementById('ambient-intensity');
         const directionalIntensitySlider = document.getElementById('directional-intensity');
         const sunXSlider = document.getElementById('sun-x');
@@ -712,41 +762,51 @@
             }, 1000);
         }
 
-        // 実際のファイル読み込み（Google Drive）
+        // 実際のファイル読み込み（Google Drive）修正版
         async function loadActualFile(fileId, fileName) {
             try {
                 showLoading(true);
+                console.log(`Google Driveファイル読み込み開始: ${fileName} (ID: ${fileId})`);
                 
-                // 複数の方法でGoogle Driveファイルにアクセス
-                let arrayBuffer;
+                // Google Driveの直接ダウンロードURL
+                const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                console.log('ダウンロードURL:', downloadUrl);
                 
-                // Method 1: 直接ダウンロードURL
-                try {
-                    const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-                    const response = await fetch(downloadUrl);
-                    
-                    if (response.ok) {
-                        arrayBuffer = await response.arrayBuffer();
-                        return arrayBuffer;
+                const response = await fetch(downloadUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/octet-stream, */*'
                     }
-                } catch (error) {
-                    console.log('Direct download failed:', error);
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
-                // Method 2: 代替ダウンロードURL
-                try {
-                    const altUrl = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
-                    console.log('Alternative URL:', altUrl);
-                    // この方法では直接ダウンロードできないため、ユーザーに通知
-                    throw new Error('ファイルへの直接アクセスができません');
-                } catch (error) {
-                    console.log('Alternative method failed:', error);
+                const contentType = response.headers.get('content-type');
+                console.log('Content-Type:', contentType);
+                
+                // レスポンスがHTMLの場合（Google Drive認証エラー）
+                if (contentType && contentType.includes('text/html')) {
+                    const text = await response.text();
+                    console.log('HTML Response (first 500 chars):', text.substring(0, 500));
+                    throw new Error('Google Driveファイルへの直接アクセスが拒否されました。ファイルの公開設定を確認してください。');
                 }
                 
-                throw new Error('Google Driveファイルにアクセスできませんでした');
+                const arrayBuffer = await response.arrayBuffer();
+                console.log('ArrayBuffer size:', arrayBuffer.byteLength);
+                
+                if (arrayBuffer.byteLength === 0) {
+                    throw new Error('ファイルサイズが0バイトです');
+                }
+                
+                return arrayBuffer;
                 
             } catch (error) {
-                console.error('ファイル読み込みエラー:', error);
+                console.error('Google Driveファイル読み込みエラー:', error);
                 throw error;
             }
         }
@@ -1047,11 +1107,12 @@
             lightingSelect.value = 'noon';
         }
 
-        // GLBモデル読み込み（GLTFLoader使用）
+        // GLBモデル読み込み（修正版）
         async function loadGLBModel(arrayBuffer, fileName, clearSceneFlag = false, source = 'demo') {
             try {
+                console.log(`GLBモデル読み込み開始: ${fileName}, source: ${source}`);
+                
                 if (clearSceneFlag) {
-                    // sceneGroupの子要素をクリア
                     while(sceneGroup.children.length > 0) {
                         sceneGroup.remove(sceneGroup.children[0]);
                     }
@@ -1063,22 +1124,48 @@
                 const isBackground = clearSceneFlag || sceneModels.length === 0;
 
                 if (arrayBuffer && source !== 'demo') {
-                    // 実際のGLBファイルを読み込み
+                    console.log('GLTFLoaderでGLBファイルを解析中...');
+                    console.log('ArrayBuffer size:', arrayBuffer.byteLength);
+                    
+                    // GLTFLoaderが正しく読み込まれているか確認
+                    if (typeof THREE.GLTFLoader === 'undefined') {
+                        console.error('GLTFLoader is not loaded!');
+                        throw new Error('GLTFLoaderが読み込まれていません');
+                    }
+                    
                     const loader = new THREE.GLTFLoader();
                     
                     return new Promise((resolve, reject) => {
+                        // ArrayBufferの先頭をチェック（GLBファイルかどうか）
+                        const view = new DataView(arrayBuffer);
+                        const magic = view.getUint32(0, true);
+                        console.log('File magic number:', magic.toString(16));
+                        
+                        if (magic !== 0x46546C67) { // "glTF" in little endian
+                            console.warn('ファイルがGLB形式ではない可能性があります');
+                        }
+                        
                         loader.parse(arrayBuffer, '', (gltf) => {
                             try {
+                                console.log('GLTFparse成功:', gltf);
                                 model = gltf.scene;
+                                
+                                if (!model || model.children.length === 0) {
+                                    console.warn('GLTFファイルに3Dオブジェクトが含まれていません');
+                                    throw new Error('有効な3Dモデルが見つかりません');
+                                }
                                 
                                 // モデルのスケールと位置を調整
                                 const box = new THREE.Box3().setFromObject(model);
                                 const size = box.getSize(new THREE.Vector3()).length();
                                 const center = box.getCenter(new THREE.Vector3());
                                 
+                                console.log('Model size:', size);
+                                console.log('Model center:', center);
+                                
                                 // 適切なサイズに調整
                                 const targetSize = isBackground ? 10 : 2;
-                                const scale = targetSize / size;
+                                const scale = size > 0 ? targetSize / size : 1;
                                 model.scale.setScalar(scale);
                                 
                                 // 中心に配置
@@ -1103,11 +1190,13 @@
                                     if (child.isMesh) {
                                         child.castShadow = true;
                                         child.receiveShadow = true;
+                                        console.log('Mesh found:', child.name || 'unnamed');
                                     }
                                 });
                                 
                                 // sceneGroupに追加
                                 sceneGroup.add(model);
+                                console.log('モデルをシーンに追加しました');
                                 
                                 const modelData = {
                                     model: model,
@@ -1125,17 +1214,20 @@
                                 updateSceneModelsList();
                                 updateObjectSelector();
                                 showLoading(false);
-                                showLoadStatus(`✅ ${fileName} を${isBackground ? '背景として' : 'オブジェクトとして'}読み込みました`, 'success');
+                                showLoadStatus(`✅ ${fileName} を正常に読み込みました（GLBファイル）`, 'success');
                                 
                                 resolve();
                             } catch (error) {
+                                console.error('GLTFparse後のエラー:', error);
                                 reject(error);
                             }
                         }, (error) => {
+                            console.error('GLTFparseエラー:', error);
                             reject(new Error('GLBファイルの解析に失敗しました: ' + error.message));
                         });
                     });
                 } else {
+                    console.log('デモ用立方体を作成');
                     // デモ用のカラフルなボックスを作成
                     const size = isBackground ? 8 : 1;
                     const geometry = new THREE.BoxGeometry(size, size, size);
@@ -1160,7 +1252,6 @@
                         );
                     }
                     
-                    // sceneGroupに追加
                     sceneGroup.add(model);
                     
                     const modelData = {
@@ -1179,13 +1270,13 @@
                     updateSceneModelsList();
                     updateObjectSelector();
                     showLoading(false);
-                    showLoadStatus(`✅ ${fileName} を${isBackground ? '背景として' : 'オブジェクトとして'}読み込みました（デモ）`, 'success');
+                    showLoadStatus(`✅ ${fileName} を読み込みました（デモ表示）`, 'success');
                 }
                 
             } catch (error) {
+                console.error('GLBモデル読み込みエラー:', error);
                 showLoading(false);
                 showLoadStatus('❌ モデル表示エラー: ' + error.message, 'error');
-                console.error('GLB loading error:', error);
             }
         }
 
@@ -1584,10 +1675,11 @@
             setLighting(selectedLighting);
             
             // カスタムモードの場合はコントロールパネル表示
+            const lightingControlsPanel = document.getElementById('lighting-controls');
             if (selectedLighting === 'custom') {
-                lightingControls.style.display = 'block';
+                lightingControlsPanel.style.display = 'block';
             } else {
-                lightingControls.style.display = 'none';
+                lightingControlsPanel.style.display = 'none';
             }
         }
 
