@@ -364,6 +364,19 @@
                 </p>
             </div>
             
+            <!-- 手動フォルダID変更機能 -->
+            <div class="local-file-section">
+                <h4>🔧 フォルダID変更（デバッグ用）</h4>
+                <div class="local-file-actions">
+                    <button id="change-folder-btn" class="btn">📁 フォルダID変更</button>
+                    <button id="reload-files-btn" class="btn">🔄 再読み込み</button>
+                </div>
+                <p class="help-text">
+                    現在のフォルダID: <code id="current-folder-id">1U0aIZZRE6tXqbosBQL4SHT0OKwQiY14c</code><br>
+                    Google DriveフォルダのURLから別のフォルダIDを指定できます
+                </p>
+            </div>
+            
             <!-- シーン内モデル一覧 -->
             <div id="scene-models" class="local-file-section" style="display:none;">
                 <h4>📦 シーン内のモデル</h4>
@@ -449,7 +462,7 @@
     <script>
         // Google Drive API設定
         const API_KEY = 'AIzaSyCCGWquJDgJPhMOdelsS3CmPm_2DMSfOSg';
-        const FOLDER_ID = '1U0aIZZRE6tXqbosBQL4SHT0OKwQiY14c';
+        let FOLDER_ID = '1U0aIZZRE6tXqbosBQL4SHT0OKwQiY14c'; // letに変更して変更可能に
         
         // グローバル変数
         let currentFiles = [];
@@ -487,6 +500,9 @@
         const localFileInput = document.getElementById('local-file-input');
         const loadLocalSingleBtn = document.getElementById('load-local-single');
         const addManualFileBtn = document.getElementById('add-manual-file');
+        const changeFolderBtn = document.getElementById('change-folder-btn');
+        const reloadFilesBtn = document.getElementById('reload-files-btn');
+        const currentFolderIdSpan = document.getElementById('current-folder-id');
         const sceneModelsSection = document.getElementById('scene-models');
         const modelsList = document.getElementById('models-list');
         const backToFiles = document.getElementById('back-to-files');
@@ -537,6 +553,10 @@
             // 手動追加
             addManualFileBtn.addEventListener('click', addManualFile);
             
+            // フォルダID変更
+            changeFolderBtn.addEventListener('click', changeFolderId);
+            reloadFilesBtn.addEventListener('click', loadGoogleDriveFiles);
+            
             // ビューアー操作
             backToFiles.addEventListener('click', () => {
                 viewerSection.style.display = 'none';
@@ -565,13 +585,19 @@
             try {
                 showStatus('🔄 Google Drive APIでフォルダ内のファイルを検索中...', '');
                 
-                const apiUrl = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents&key=${API_KEY}&fields=files(id,name,size,webContentLink,webViewLink)`;
+                // フォルダ情報の確認
+                console.log('フォルダID:', FOLDER_ID);
+                console.log('フォルダURL:', `https://drive.google.com/drive/folders/${FOLDER_ID}`);
+                
+                const apiUrl = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents&key=${API_KEY}&fields=files(id,name,size,webContentLink,webViewLink,mimeType)`;
                 
                 console.log('Google Drive API呼び出し:', apiUrl);
                 
                 const response = await fetch(apiUrl);
                 
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API エラーレスポンス:', errorText);
                     throw new Error(`Google Drive API エラー: ${response.status} ${response.statusText}`);
                 }
                 
@@ -579,20 +605,49 @@
                 console.log('Google Drive API レスポンス:', data);
                 
                 if (data.error) {
+                    console.error('API エラー詳細:', data.error);
                     throw new Error(`API エラー: ${data.error.message}`);
                 }
                 
+                // 全ファイルをログ出力
+                console.log(`フォルダ内のファイル数: ${data.files ? data.files.length : 0}`);
+                if (data.files) {
+                    data.files.forEach((file, index) => {
+                        console.log(`ファイル ${index + 1}: ${file.name} (${file.mimeType})`);
+                    });
+                }
+                
                 // GLB/GLTFファイルのみフィルタリング
-                const glbFiles = data.files.filter(file => 
+                const glbFiles = data.files ? data.files.filter(file => 
                     file.name.toLowerCase().endsWith('.glb') || 
                     file.name.toLowerCase().endsWith('.gltf')
-                );
+                ) : [];
                 
                 console.log(`GLB/GLTFファイルを${glbFiles.length}個発見:`, glbFiles);
                 
                 if (glbFiles.length === 0) {
                     showStatus('📁 フォルダ内にGLB/GLTFファイルが見つかりませんでした', 'warning');
-                    showStatus('手動でファイルを追加するか、ローカルファイルをご利用ください', '');
+                    
+                    // デバッグ情報を表示
+                    const debugInfo = `
+                        🔍 デバッグ情報:
+                        • フォルダID: ${FOLDER_ID}
+                        • 総ファイル数: ${data.files ? data.files.length : 0}
+                        • フォルダURL: https://drive.google.com/drive/folders/${FOLDER_ID}
+                        
+                        📋 確認事項:
+                        • フォルダが「リンクを知っている全員が閲覧可」に設定されているか
+                        • フォルダ内にGLB/GLTFファイルが存在するか
+                        • ファイル拡張子が .glb または .gltf で終わっているか
+                    `;
+                    
+                    showStatus(debugInfo, '');
+                    
+                    // 見つかったファイルの一覧も表示
+                    if (data.files && data.files.length > 0) {
+                        const fileList = data.files.map(f => `• ${f.name}`).join('\n');
+                        showStatus(`\n📄 フォルダ内のファイル:\n${fileList}`, '');
+                    }
                 } else {
                     // ファイル情報を整形
                     currentFiles = glbFiles.map(file => ({
@@ -615,13 +670,27 @@
             } catch (error) {
                 console.error('Google Drive API エラー:', error);
                 showStatus(`❌ Google Drive読み込みエラー: ${error.message}`, 'error');
-                showStatus('手動でファイルを追加するか、ローカルファイルをご利用ください', '');
+                
+                // より詳細なデバッグ情報
+                const debugInfo = `
+                    🔧 トラブルシューティング:
+                    • APIキー: ${API_KEY.substring(0, 10)}...
+                    • フォルダID: ${FOLDER_ID}
+                    • エラー: ${error.message}
+                    
+                    💡 解決方法:
+                    1. フォルダを「リンクを知っている全員が閲覧可」に設定
+                    2. フォルダURLで直接アクセスできるか確認
+                    3. 手動でファイルを追加するか、ローカルファイルを使用
+                `;
+                
+                showStatus(debugInfo, '');
             }
         }
         
-        // ステータス表示
+        // ステータス表示（改良版）
         function showStatus(message, type = '') {
-            loadStatus.textContent = message;
+            loadStatus.innerHTML = message.replace(/\n/g, '<br>');
             loadStatus.className = `status ${type}`;
         }
         
@@ -650,6 +719,40 @@
             };
             reader.readAsArrayBuffer(file);
             localFileInput.value = '';
+        }
+        
+        // フォルダID変更機能
+        function changeFolderId() {
+            const newFolderId = prompt(`新しいGoogle DriveフォルダIDを入力してください:
+
+現在のフォルダID: ${FOLDER_ID}
+
+フォルダURLの例:
+https://drive.google.com/drive/folders/新しいフォルダID
+
+または直接フォルダIDを入力:`, FOLDER_ID);
+            
+            if (!newFolderId) return;
+            
+            // URLからフォルダIDを抽出する場合
+            let extractedId = newFolderId;
+            const folderUrlMatch = newFolderId.match(/\/folders\/([a-zA-Z0-9-_]+)/);
+            if (folderUrlMatch) {
+                extractedId = folderUrlMatch[1];
+            }
+            
+            if (extractedId && extractedId !== FOLDER_ID) {
+                FOLDER_ID = extractedId;
+                currentFolderIdSpan.textContent = FOLDER_ID;
+                showStatus(`📁 フォルダIDを変更しました: ${FOLDER_ID}`, 'success');
+                
+                // ファイルリストをクリア
+                currentFiles = [];
+                fileSelector.style.display = 'none';
+                
+                // 新しいフォルダから読み込み
+                loadGoogleDriveFiles();
+            }
         }
         
         // Google Drive共有リンクからファイル追加
