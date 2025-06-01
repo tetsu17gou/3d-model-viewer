@@ -378,6 +378,19 @@
                 </p>
             </div>
             
+            <!-- デバッグ用テストボタン -->
+            <div class="local-file-section">
+                <h4>🧪 デバッグテスト</h4>
+                <div class="local-file-actions">
+                    <button id="test-alert" class="btn">🔔 アラートテスト</button>
+                    <button id="test-console" class="btn">📝 コンソールテスト</button>
+                    <button id="test-status" class="btn">💬 ステータステスト</button>
+                </div>
+                <p class="help-text">
+                    これらのボタンでJavaScriptの動作をテストできます
+                </p>
+            </div>
+            
             <!-- シーン内モデル一覧 -->
             <div id="scene-models" class="local-file-section" style="display:none;">
                 <h4>📦 シーン内のモデル</h4>
@@ -504,6 +517,9 @@
         const changeFolderBtn = document.getElementById('change-folder-btn');
         const reloadFilesBtn = document.getElementById('reload-files-btn');
         const currentFolderIdSpan = document.getElementById('current-folder-id');
+        const testAlertBtn = document.getElementById('test-alert');
+        const testConsoleBtn = document.getElementById('test-console');
+        const testStatusBtn = document.getElementById('test-status');
         const sceneModelsSection = document.getElementById('scene-models');
         const modelsList = document.getElementById('models-list');
         const backToFiles = document.getElementById('back-to-files');
@@ -535,6 +551,9 @@
         console.log('addManualFileBtn:', addManualFileBtn ? 'OK' : 'NOT FOUND');
         console.log('changeFolderBtn:', changeFolderBtn ? 'OK' : 'NOT FOUND');
         console.log('reloadFilesBtn:', reloadFilesBtn ? 'OK' : 'NOT FOUND');
+        console.log('testAlertBtn:', testAlertBtn ? 'OK' : 'NOT FOUND');
+        console.log('testConsoleBtn:', testConsoleBtn ? 'OK' : 'NOT FOUND');
+        console.log('testStatusBtn:', testStatusBtn ? 'OK' : 'NOT FOUND');
         
         // 初期化（デバッグ機能付き）
         window.addEventListener('load', () => {
@@ -560,22 +579,39 @@
             console.log('ブラウザ:', navigator.userAgent);
             console.log('DOM ready state:', document.readyState);
             
-            // イベントリスナー設定
-            setupEventListeners();
-            
             // テスト用ボタンクリック関数をグローバルに追加
             window.testButtonClick = function(buttonId) {
+                console.log(`🧪 テストクリック関数呼び出し: ${buttonId}`);
                 const button = document.getElementById(buttonId);
                 if (button) {
-                    console.log(`🧪 テストクリック: ${buttonId}`);
+                    console.log(`✅ ボタン発見: ${buttonId}`);
                     button.click();
+                    console.log(`🖱️ クリック実行: ${buttonId}`);
                 } else {
                     console.error(`❌ ボタンが見つかりません: ${buttonId}`);
+                    console.log('利用可能なボタンID一覧:');
+                    const allButtons = document.querySelectorAll('button[id]');
+                    allButtons.forEach(btn => console.log('- ' + btn.id));
                 }
             };
             
+            // 簡単なテスト関数も追加
+            window.simpleTest = function() {
+                console.log('🎯 簡単テスト実行');
+                alert('テスト関数が正常に動作しています！');
+            };
+            
+            // イベントリスナー設定
+            setupEventListeners();
+            
             // ステータス表示テスト
-            showStatus('✅ アプリケーション初期化完了<br><small>ボタンクリックをテストしてください</small>', 'success');
+            showStatus('✅ アプリケーション初期化完了<br><small>テスト関数が利用可能になりました</small>', 'success');
+            
+            // コンソールに使用方法を表示
+            console.log('📋 テスト関数の使用方法:');
+            console.log('window.simpleTest() - 簡単なテスト');
+            console.log('window.testButtonClick("test-alert") - アラートテストボタン');
+            console.log('window.testButtonClick("load-local-single") - ローカルファイル読み込み');
             
             // Google Drive読み込みを非同期で実行（UIをブロックしない）
             setTimeout(() => {
@@ -592,6 +628,7 @@
             const elements = {
                 prevFileBtn, nextFileBtn, loadSingleBtn, addToSceneBtn, clearSceneBtn,
                 loadLocalSingleBtn, addManualFileBtn, changeFolderBtn, reloadFilesBtn,
+                testAlertBtn, testConsoleBtn, testStatusBtn,
                 backToFiles, resetCameraBtn, toggleRotationBtn, lightingSelect
             };
             
@@ -652,6 +689,24 @@
                 setTimeout(() => {
                     loadGoogleDriveFiles();
                 }, 100);
+            });
+            
+            if (testAlertBtn) testAlertBtn.addEventListener('click', () => {
+                console.log('🔔 アラートテストボタンクリック');
+                alert('✅ JavaScriptは正常に動作しています！\n\nブラウザ: ' + navigator.userAgent.split(' ')[0] + '\n時刻: ' + new Date().toLocaleTimeString());
+            });
+            if (testConsoleBtn) testConsoleBtn.addEventListener('click', () => {
+                console.log('📝 コンソールテストボタンクリック');
+                console.log('✅ コンソールログテスト成功');
+                console.log('現在時刻:', new Date().toLocaleString());
+                console.log('ページURL:', window.location.href);
+                console.log('利用可能なテスト関数:');
+                console.log('- window.simpleTest()');
+                console.log('- window.testButtonClick("button-id")');
+            });
+            if (testStatusBtn) testStatusBtn.addEventListener('click', () => {
+                console.log('💬 ステータステストボタンクリック');
+                showStatus('✅ ステータス表示テスト成功！<br><small>時刻: ' + new Date().toLocaleTimeString() + '</small>', 'success');
             });
             
             // ビューアー操作
