@@ -250,7 +250,7 @@
 
     <script>
         // Google Drive API設定
-        const CLIENT_ID = '288299718991-9hbo1od9mevrqoek6bmufdpf8l3aaabs.apps.googleusercontent.com'; // ここに実際のClient IDを入力
+        const CLIENT_ID = '288299718991-9hbo1od9mevrqoek6bmufdpf8l3aaabs.apps.googleusercontent.com';
         const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
         const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
@@ -259,6 +259,30 @@
         let gsiLoaded = false;
         let tokenClient;
         let accessToken = null;
+
+        // 診断情報表示
+        function updateDiagnostics() {
+            const diagnostics = `
+診断情報:
+- GAPI読み込み: ${gapiLoaded ? '✅' : '❌'}
+- GSI読み込み: ${gsiLoaded ? '✅' : '❌'}  
+- TokenClient: ${tokenClient ? '✅' : '❌'}
+- Google Object: ${typeof google !== 'undefined' ? '✅' : '❌'}
+- Google.accounts: ${typeof google !== 'undefined' && google.accounts ? '✅' : '❌'}
+- Google.accounts.oauth2: ${typeof google !== 'undefined' && google.accounts && google.accounts.oauth2 ? '✅' : '❌'}
+            `;
+            console.log(diagnostics);
+            
+            // 画面にも表示
+            let diagDiv = document.getElementById('diagnostics');
+            if (!diagDiv) {
+                diagDiv = document.createElement('div');
+                diagDiv.id = 'diagnostics';
+                diagDiv.style.cssText = 'background: rgba(0,0,0,0.7); color: white; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px; white-space: pre-line; border-radius: 5px;';
+                document.querySelector('.auth-section').appendChild(diagDiv);
+            }
+            diagDiv.textContent = diagnostics;
+        }
 
         // Three.js変数
         let scene, camera, renderer, controls, model;
@@ -284,62 +308,78 @@
 
         // Google API初期化
         function initializeGapi() {
-            if (CLIENT_ID === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
-                showStatus('⚠️ Client IDが設定されていません。Google Cloud Consoleで取得してください。', 'error');
-                return;
-            }
+            console.log('=== GAPI初期化開始 ===');
+            updateDiagnostics();
 
             // gapiが利用可能になるまで待機
             if (typeof gapi === 'undefined') {
-                console.log('Waiting for gapi...');
+                console.log('gapiが未定義、500ms後にリトライ');
                 setTimeout(initializeGapi, 500);
                 return;
             }
 
+            console.log('gapi検出、client読み込み開始');
             // GAPI クライアントライブラリを読み込み
             gapi.load('client', initializeGapiClient);
         }
 
         async function initializeGapiClient() {
             try {
+                console.log('GAPI client初期化中...');
                 await gapi.client.init({
                     discoveryDocs: [DISCOVERY_DOC],
                 });
                 gapiLoaded = true;
-                console.log('GAPI client loaded');
+                console.log('✅ GAPI client初期化完了');
                 showStatus('🔧 Google API読み込み完了', 'success');
+                updateDiagnostics();
                 maybeEnableButtons();
             } catch (error) {
-                console.error('Error loading GAPI client:', error);
+                console.error('❌ GAPI初期化エラー:', error);
                 showStatus('❌ GAPI初期化エラー: ' + error.message, 'error');
+                updateDiagnostics();
             }
         }
 
         // Google Identity Services初期化
         function initializeGsi() {
-            console.log('Checking for Google Identity Services...');
+            console.log('=== GSI初期化開始 ===');
+            updateDiagnostics();
             
-            if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
-                console.log('Waiting for Google Identity Services...');
+            if (typeof google === 'undefined') {
+                console.log('googleオブジェクトが未定義、500ms後にリトライ');
+                setTimeout(initializeGsi, 500);
+                return;
+            }
+
+            if (!google.accounts) {
+                console.log('google.accountsが未定義、500ms後にリトライ');
+                setTimeout(initializeGsi, 500);
+                return;
+            }
+
+            if (!google.accounts.oauth2) {
+                console.log('google.accounts.oauth2が未定義、500ms後にリトライ');
                 setTimeout(initializeGsi, 500);
                 return;
             }
 
             try {
-                console.log('Initializing token client...');
+                console.log('TokenClientを初期化中...');
                 tokenClient = google.accounts.oauth2.initTokenClient({
                     client_id: CLIENT_ID,
                     scope: SCOPES,
                     callback: (tokenResponse) => {
-                        console.log('Token received:', tokenResponse);
+                        console.log('🎯 認証コールバック実行:', tokenResponse);
                         if (tokenResponse.error) {
-                            console.error('Token error:', tokenResponse.error);
+                            console.error('❌ 認証エラー:', tokenResponse.error);
                             showStatus('❌ 認証エラー: ' + tokenResponse.error, 'error');
                             return;
                         }
                         
                         accessToken = tokenResponse.access_token;
                         if (tokenResponse.access_token) {
+                            console.log('✅ アクセストークン取得成功');
                             showStatus('✅ Google Driveに接続しました', 'success');
                             authBtn.style.display = 'none';
                             signoutBtn.style.display = 'inline-block';
@@ -349,56 +389,62 @@
                 });
                 
                 gsiLoaded = true;
-                console.log('GSI token client initialized successfully');
+                console.log('✅ GSI TokenClient初期化完了');
+                updateDiagnostics();
                 maybeEnableButtons();
             } catch (error) {
-                console.error('Error loading GSI:', error);
+                console.error('❌ GSI初期化エラー:', error);
                 showStatus('❌ GSI初期化エラー: ' + error.message, 'error');
+                updateDiagnostics();
                 // リトライ
                 setTimeout(initializeGsi, 1000);
             }
         }
 
         function maybeEnableButtons() {
-            console.log('Checking if both APIs are loaded:', {gapiLoaded, gsiLoaded, tokenClient: !!tokenClient});
+            console.log('ボタン有効化チェック:', {gapiLoaded, gsiLoaded, tokenClient: !!tokenClient});
+            updateDiagnostics();
+            
             if (gapiLoaded && gsiLoaded && tokenClient) {
                 authBtn.disabled = false;
                 showStatus('📝 Google Driveに接続してください', '');
-                console.log('All APIs loaded, button enabled');
+                console.log('✅ 全てのAPIが読み込み完了、ボタンを有効化');
             } else {
                 showStatus('🔄 Google APIを読み込み中...', '');
+                console.log('⏳ まだ読み込み中...');
             }
         }
 
         // サインイン
         function signIn() {
-            console.log('Sign in attempted, tokenClient:', !!tokenClient);
+            console.log('=== サインイン開始 ===');
+            console.log('TokenClient状態:', !!tokenClient);
+            updateDiagnostics();
             
             if (!tokenClient) {
+                console.error('❌ TokenClientが初期化されていません');
                 showStatus('❌ 認証クライアントが初期化されていません', 'error');
-                console.error('Token client not initialized');
                 
-                // 再初期化を試行
-                if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
-                    console.log('Attempting to reinitialize token client...');
-                    initializeGsi();
-                }
+                // 強制的に再初期化を試行
+                console.log('🔄 GSI再初期化を試行...');
+                initializeGsi();
                 return;
             }
 
             try {
-                console.log('Requesting access token...');
+                console.log('🚀 アクセストークンをリクエスト中...');
                 showStatus('🔄 認証中...', '');
                 
                 // トークンが既にある場合は削除
                 if (accessToken) {
+                    console.log('既存のトークンを破棄');
                     google.accounts.oauth2.revoke(accessToken);
                 }
                 
                 // 新しいトークンを要求
                 tokenClient.requestAccessToken({prompt: 'consent'});
             } catch (error) {
-                console.error('Sign in error:', error);
+                console.error('❌ サインインエラー:', error);
                 showStatus('❌ サインインエラー: ' + error.message, 'error');
             }
         }
@@ -748,24 +794,36 @@
         resetCameraBtn.addEventListener('click', resetCamera);
         toggleRotationBtn.addEventListener('click', toggleAutoRotation);
 
-        // 初期化を並行実行
+        // 初期化を段階的に実行
         function startInitialization() {
-            console.log('Starting initialization...');
+            console.log('🚀 初期化プロセス開始');
             showStatus('🔄 Google APIを読み込み中...', '');
+            updateDiagnostics();
             
-            // 両方のAPIを並行して初期化
+            // まずGAPIを初期化
             initializeGapi();
             
-            // GSIの初期化は少し遅らせる
+            // GSIの初期化は2秒後に開始
             setTimeout(() => {
+                console.log('🔄 GSI初期化開始...');
                 initializeGsi();
-            }, 1000);
+            }, 2000);
+            
+            // 10秒後に強制診断
+            setTimeout(() => {
+                console.log('🔍 10秒後の強制診断:');
+                updateDiagnostics();
+                if (!tokenClient) {
+                    console.log('⚠️ 10秒経ってもTokenClientが初期化されていません');
+                    showStatus('⚠️ 初期化に時間がかかっています。ブラウザを更新してみてください。', 'error');
+                }
+            }, 10000);
         }
 
         // 初期化
         window.addEventListener('load', () => {
-            console.log('Page loaded, starting initialization...');
-            setTimeout(startInitialization, 1500);
+            console.log('📄 ページ読み込み完了');
+            setTimeout(startInitialization, 2000);
         });
     </script>
 </body>
