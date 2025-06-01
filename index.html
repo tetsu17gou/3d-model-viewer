@@ -1,4 +1,33 @@
-<!DOCTYPE html>
+// イベントリスナー
+        authBtn.addEventListener('click', signIn);
+        signoutBtn.addEventListener('click', signOut);
+        backToFolders.addEventListener('click', () => {
+            fileSection.style.display = 'none';
+            folderSection.style.display = 'block';
+        });
+        backToFiles.addEventListener('click', () => {
+            viewerSection.style.display = 'none';
+            fileSection.style.display = 'block';
+        });
+        resetCameraBtn.addEventListener('click', resetCamera);
+        toggleRotationBtn.addEventListener('click', toggleAutoRotation);
+        
+        // 新しいイベントリスナー
+        prevFileBtn.addEventListener('click', () => navigateFiles('prev'));
+        nextFileBtn.addEventListener('click', () => navigateFiles('next'));
+        loadSingleBtn.addEventListener('click', loadSingleModel);
+        addToSceneBtn.addEventListener('click', addModelToScene);
+        clearSceneBtn.addEventListener('click', clearScene);
+        
+        // 位置制御イベントリスナー
+        posXSlider.addEventListener('input', updateSelectedModelPosition);
+        posYSlider.addEventListener('input', updateSelectedModelPosition);
+        posZSlider.addEventListener('input', updateSelectedModelPosition);
+        scaleSlider.addEventListener('input', updateSelectedModelPosition);
+        
+        // グローバル関数として定義（HTMLのonclickから呼び出されるため）
+        window.selectModel = selectModel;
+        window.removeModel = removeModel;<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -108,24 +137,108 @@
             margin-bottom: 30px;
         }
         
-        .file-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .file-item {
-            background: rgba(255,255,255,0.15);
-            padding: 20px;
+        .file-selector {
+            background: rgba(255,255,255,0.1);
             border-radius: 10px;
-            cursor: pointer;
-            transition: transform 0.3s, background 0.3s;
+            padding: 20px;
+            margin: 20px 0;
         }
         
-        .file-item:hover {
-            transform: translateY(-3px);
-            background: rgba(255,255,255,0.25);
+        .selector-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .nav-btn {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .nav-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .file-display {
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px;
+            padding: 20px;
+            min-width: 300px;
+            text-align: center;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .scene-models {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .model-item {
+            background: rgba(255,255,255,0.15);
+            border-radius: 5px;
+            padding: 10px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .model-controls {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .small-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        
+        .position-controls {
+            margin-top: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .position-group {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .position-group label {
+            width: 60px;
+            text-align: left;
         }
         
         .viewer-section {
@@ -226,7 +339,32 @@
         <div id="file-section" class="file-section">
             <h2>🎨 3Dモデルを選択</h2>
             <button id="back-to-folders" class="btn">← フォルダ一覧に戻る</button>
-            <div class="file-list" id="file-list"></div>
+            
+            <!-- ファイル選択UI -->
+            <div class="file-selector">
+                <div class="selector-container">
+                    <button id="prev-file" class="nav-btn">❮</button>
+                    <div class="file-display">
+                        <div id="current-file-info">
+                            <h3 id="current-file-name">ファイル名</h3>
+                            <p id="current-file-size">サイズ: --</p>
+                            <p id="file-counter">1 / 1</p>
+                        </div>
+                    </div>
+                    <button id="next-file" class="nav-btn">❯</button>
+                </div>
+                <div class="file-actions">
+                    <button id="load-single" class="btn">単体で表示</button>
+                    <button id="add-to-scene" class="btn">シーンに追加</button>
+                    <button id="clear-scene" class="btn">シーンクリア</button>
+                </div>
+            </div>
+            
+            <!-- シーン内モデル一覧 -->
+            <div id="scene-models" class="scene-models" style="display:none;">
+                <h3>📦 シーン内のモデル</h3>
+                <div id="models-list"></div>
+            </div>
         </div>
         
         <div id="viewer-section" class="viewer-section">
@@ -235,6 +373,32 @@
             <div id="viewer">
                 <div class="loading" id="loading">読み込み中...</div>
             </div>
+            
+            <!-- 選択中モデルの位置制御 -->
+            <div id="position-controls" class="position-controls" style="display:none;">
+                <h3>🎯 選択中モデルの位置調整</h3>
+                <div class="position-group">
+                    <label>X位置:</label>
+                    <input type="range" id="pos-x" min="-10" max="10" step="0.1" value="0">
+                    <span id="pos-x-value">0</span>
+                </div>
+                <div class="position-group">
+                    <label>Y位置:</label>
+                    <input type="range" id="pos-y" min="-10" max="10" step="0.1" value="0">
+                    <span id="pos-y-value">0</span>
+                </div>
+                <div class="position-group">
+                    <label>Z位置:</label>
+                    <input type="range" id="pos-z" min="-10" max="10" step="0.1" value="0">
+                    <span id="pos-z-value">0</span>
+                </div>
+                <div class="position-group">
+                    <label>スケール:</label>
+                    <input type="range" id="scale" min="0.1" max="3" step="0.1" value="1">
+                    <span id="scale-value">1</span>
+                </div>
+            </div>
+            
             <div class="controls">
                 <div class="control-group">
                     <label>回転速度:</label>
@@ -259,6 +423,14 @@
         let gsiLoaded = false;
         let tokenClient;
         let accessToken = null;
+        
+        // ファイル管理
+        let currentFiles = [];
+        let currentFileIndex = 0;
+        
+        // 3Dシーン管理
+        let sceneModels = []; // シーン内のモデル配列
+        let selectedModelIndex = -1; // 選択中のモデル
 
         // 診断情報表示
         function updateDiagnostics() {
@@ -305,6 +477,27 @@
         const rotationSpeedSlider = document.getElementById('rotation-speed');
         const resetCameraBtn = document.getElementById('reset-camera');
         const toggleRotationBtn = document.getElementById('toggle-rotation');
+        
+        // 新しいUI要素
+        const prevFileBtn = document.getElementById('prev-file');
+        const nextFileBtn = document.getElementById('next-file');
+        const currentFileName = document.getElementById('current-file-name');
+        const currentFileSize = document.getElementById('current-file-size');
+        const fileCounter = document.getElementById('file-counter');
+        const loadSingleBtn = document.getElementById('load-single');
+        const addToSceneBtn = document.getElementById('add-to-scene');
+        const clearSceneBtn = document.getElementById('clear-scene');
+        const sceneModelsSection = document.getElementById('scene-models');
+        const modelsList = document.getElementById('models-list');
+        const positionControls = document.getElementById('position-controls');
+        const posXSlider = document.getElementById('pos-x');
+        const posYSlider = document.getElementById('pos-y');
+        const posZSlider = document.getElementById('pos-z');
+        const scaleSlider = document.getElementById('scale');
+        const posXValue = document.getElementById('pos-x-value');
+        const posYValue = document.getElementById('pos-y-value');
+        const posZValue = document.getElementById('pos-z-value');
+        const scaleValue = document.getElementById('scale-value');
 
         // Google API初期化
         function initializeGapi() {
@@ -545,40 +738,71 @@
             }
         }
 
-        // ファイル表示
+        // ファイル表示（新しい矢印UI）
         function displayFiles(files, folderName) {
-            fileList.innerHTML = '';
+            currentFiles = files;
+            currentFileIndex = 0;
+            
             folderSection.style.display = 'none';
             fileSection.style.display = 'block';
 
             if (files.length === 0) {
-                fileList.innerHTML = '<p>GLBファイルが見つかりませんでした</p>';
+                currentFileName.textContent = 'GLBファイルが見つかりませんでした';
+                currentFileSize.textContent = '';
+                fileCounter.textContent = '0 / 0';
+                prevFileBtn.disabled = true;
+                nextFileBtn.disabled = true;
+                loadSingleBtn.disabled = true;
+                addToSceneBtn.disabled = true;
                 return;
             }
 
-            files.forEach(file => {
-                const fileDiv = document.createElement('div');
-                fileDiv.className = 'file-item';
-                const size = file.size ? (parseInt(file.size) / 1024 / 1024).toFixed(2) + ' MB' : '不明';
-                fileDiv.innerHTML = `
-                    <h3>🎨 ${file.name}</h3>
-                    <p>サイズ: ${size}</p>
-                    <p>クリックして表示</p>
-                `;
-                fileDiv.onclick = () => loadModel(file.id, file.name);
-                fileList.appendChild(fileDiv);
-            });
+            updateFileDisplay();
         }
 
-        // 3Dモデル読み込み
-        async function loadModel(fileId, fileName) {
-            try {
-                showViewer(fileName);
-                showLoading(true);
+        // ファイル表示更新
+        function updateFileDisplay() {
+            if (currentFiles.length === 0) return;
+            
+            const file = currentFiles[currentFileIndex];
+            const size = file.size ? (parseInt(file.size) / 1024 / 1024).toFixed(2) + ' MB' : '不明';
+            
+            currentFileName.textContent = file.name;
+            currentFileSize.textContent = `サイズ: ${size}`;
+            fileCounter.textContent = `${currentFileIndex + 1} / ${currentFiles.length}`;
+            
+            // ボタンの有効/無効を設定
+            prevFileBtn.disabled = currentFileIndex === 0;
+            nextFileBtn.disabled = currentFileIndex === currentFiles.length - 1;
+            loadSingleBtn.disabled = false;
+            addToSceneBtn.disabled = false;
+        }
 
+        // ファイルナビゲーション
+        function navigateFiles(direction) {
+            if (direction === 'prev' && currentFileIndex > 0) {
+                currentFileIndex--;
+            } else if (direction === 'next' && currentFileIndex < currentFiles.length - 1) {
+                currentFileIndex++;
+            }
+            updateFileDisplay();
+        }
+
+        // 3Dモデル読み込み（単体表示）
+        async function loadSingleModel() {
+            if (currentFiles.length === 0) return;
+            const file = currentFiles[currentFileIndex];
+            
+            try {
+                showViewer(file.name);
+                showLoading(true);
+                
+                // シーンをクリア
+                clearScene();
+                
                 // ファイルダウンロード
                 const response = await gapi.client.drive.files.get({
-                    fileId: fileId,
+                    fileId: file.id,
                     alt: 'media'
                 });
 
@@ -586,7 +810,34 @@
                 const arrayBuffer = str2ab(response.body);
                 
                 // Three.jsで読み込み
-                await loadGLBModel(arrayBuffer, fileName);
+                await loadGLBModel(arrayBuffer, file.name, true);
+                
+            } catch (error) {
+                showStatus('❌ モデル読み込みエラー: ' + error.message, 'error');
+                showLoading(false);
+            }
+        }
+
+        // 3Dモデルをシーンに追加
+        async function addModelToScene() {
+            if (currentFiles.length === 0) return;
+            const file = currentFiles[currentFileIndex];
+            
+            try {
+                showViewer(`シーン: ${sceneModels.length + 1}個のモデル`);
+                showLoading(true);
+                
+                // ファイルダウンロード
+                const response = await gapi.client.drive.files.get({
+                    fileId: file.id,
+                    alt: 'media'
+                });
+
+                // ArrayBufferに変換
+                const arrayBuffer = str2ab(response.body);
+                
+                // Three.jsで読み込み（シーンに追加）
+                await loadGLBModel(arrayBuffer, file.name, false);
                 
             } catch (error) {
                 showStatus('❌ モデル読み込みエラー: ' + error.message, 'error');
@@ -642,32 +893,166 @@
             animate();
         }
 
-        // GLBモデル読み込み
-        async function loadGLBModel(arrayBuffer, fileName) {
+        // GLBモデル読み込み（改良版）
+        async function loadGLBModel(arrayBuffer, fileName, clearScene = false) {
             try {
-                // 既存モデル削除
-                if (model) {
-                    scene.remove(model);
+                if (clearScene) {
+                    // 既存モデル全削除
+                    sceneModels.forEach(modelData => {
+                        scene.remove(modelData.model);
+                    });
+                    sceneModels = [];
+                    selectedModelIndex = -1;
                 }
 
-                // GLTFLoaderの代替実装（簡単なGLBパーサー）
+                // デモ用のカラフルなボックスを作成
                 // 実際のプロジェクトではGLTFLoaderを使用してください
-                const geometry = new THREE.BoxGeometry(2, 2, 2);
+                const geometry = new THREE.BoxGeometry(1, 1, 1);
                 const material = new THREE.MeshLambertMaterial({ 
-                    color: Math.random() * 0xffffff 
+                    color: new THREE.Color().setHSL(Math.random(), 0.7, 0.5)
                 });
-                model = new THREE.Mesh(geometry, material);
+                const model = new THREE.Mesh(geometry, material);
                 model.castShadow = true;
                 model.receiveShadow = true;
                 
+                // モデルの位置を設定（複数モデルの場合は分散配置）
+                const spacing = 2.5;
+                const numModels = sceneModels.length;
+                model.position.set(
+                    (numModels % 3 - 1) * spacing,
+                    0,
+                    Math.floor(numModels / 3) * spacing
+                );
+                
                 scene.add(model);
                 
+                // モデルデータを保存
+                const modelData = {
+                    model: model,
+                    name: fileName,
+                    originalPosition: model.position.clone(),
+                    originalScale: model.scale.clone()
+                };
+                sceneModels.push(modelData);
+                
+                // 最初のモデルまたは単体表示の場合は選択状態にする
+                if (clearScene || sceneModels.length === 1) {
+                    selectedModelIndex = sceneModels.length - 1;
+                    updateSelectedModel();
+                }
+                
+                updateSceneModelsList();
                 showLoading(false);
                 showStatus(`✅ ${fileName} を読み込みました`, 'success');
                 
             } catch (error) {
                 showLoading(false);
                 showStatus('❌ モデル表示エラー: ' + error.message, 'error');
+            }
+        }
+
+        // シーンクリア
+        function clearScene() {
+            sceneModels.forEach(modelData => {
+                scene.remove(modelData.model);
+            });
+            sceneModels = [];
+            selectedModelIndex = -1;
+            updateSceneModelsList();
+            updateSelectedModel();
+        }
+
+        // シーン内モデル一覧更新
+        function updateSceneModelsList() {
+            if (sceneModels.length === 0) {
+                sceneModelsSection.style.display = 'none';
+                return;
+            }
+            
+            sceneModelsSection.style.display = 'block';
+            modelsList.innerHTML = '';
+            
+            sceneModels.forEach((modelData, index) => {
+                const modelDiv = document.createElement('div');
+                modelDiv.className = 'model-item';
+                modelDiv.style.background = selectedModelIndex === index ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)';
+                
+                modelDiv.innerHTML = `
+                    <span>🎨 ${modelData.name}</span>
+                    <div class="model-controls">
+                        <button class="small-btn" onclick="selectModel(${index})">選択</button>
+                        <button class="small-btn" onclick="removeModel(${index})">削除</button>
+                    </div>
+                `;
+                
+                modelsList.appendChild(modelDiv);
+            });
+        }
+
+        // モデル選択
+        function selectModel(index) {
+            if (index >= 0 && index < sceneModels.length) {
+                selectedModelIndex = index;
+                updateSelectedModel();
+                updateSceneModelsList();
+            }
+        }
+
+        // モデル削除
+        function removeModel(index) {
+            if (index >= 0 && index < sceneModels.length) {
+                scene.remove(sceneModels[index].model);
+                sceneModels.splice(index, 1);
+                
+                // 選択インデックスを調整
+                if (selectedModelIndex >= index) {
+                    selectedModelIndex = Math.max(-1, selectedModelIndex - 1);
+                }
+                
+                updateSceneModelsList();
+                updateSelectedModel();
+            }
+        }
+
+        // 選択中モデルの表示更新
+        function updateSelectedModel() {
+            if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
+                const modelData = sceneModels[selectedModelIndex];
+                const model = modelData.model;
+                
+                // UIの値を更新
+                posXSlider.value = model.position.x;
+                posYSlider.value = model.position.y;
+                posZSlider.value = model.position.z;
+                scaleSlider.value = model.scale.x;
+                
+                updatePositionValues();
+                positionControls.style.display = 'block';
+            } else {
+                positionControls.style.display = 'none';
+            }
+        }
+
+        // 位置制御の値表示更新
+        function updatePositionValues() {
+            posXValue.textContent = parseFloat(posXSlider.value).toFixed(1);
+            posYValue.textContent = parseFloat(posYSlider.value).toFixed(1);
+            posZValue.textContent = parseFloat(posZSlider.value).toFixed(1);
+            scaleValue.textContent = parseFloat(scaleSlider.value).toFixed(1);
+        }
+
+        // 選択中モデルの位置更新
+        function updateSelectedModelPosition() {
+            if (selectedModelIndex >= 0 && selectedModelIndex < sceneModels.length) {
+                const model = sceneModels[selectedModelIndex].model;
+                model.position.set(
+                    parseFloat(posXSlider.value),
+                    parseFloat(posYSlider.value),
+                    parseFloat(posZSlider.value)
+                );
+                const scale = parseFloat(scaleSlider.value);
+                model.scale.set(scale, scale, scale);
+                updatePositionValues();
             }
         }
 
@@ -722,12 +1107,15 @@
             setInterval(updateRotation, 16);
         }
 
-        // アニメーション
+        // アニメーション（改良版）
         function animate() {
             animationId = requestAnimationFrame(animate);
             
-            if (model && autoRotate) {
-                model.rotation.y += parseFloat(rotationSpeedSlider.value);
+            if (autoRotate && sceneModels.length > 0) {
+                const speed = parseFloat(rotationSpeedSlider.value);
+                sceneModels.forEach(modelData => {
+                    modelData.model.rotation.y += speed;
+                });
             }
             
             renderer.render(scene, camera);
@@ -770,9 +1158,10 @@
 
         function resetCamera() {
             camera.position.set(0, 0, 5);
-            if (model) {
-                model.rotation.set(0, 0, 0);
-            }
+            // 全モデルの回転をリセット
+            sceneModels.forEach(modelData => {
+                modelData.model.rotation.set(0, 0, 0);
+            });
         }
 
         function toggleAutoRotation() {
